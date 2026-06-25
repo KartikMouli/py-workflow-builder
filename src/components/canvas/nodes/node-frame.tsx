@@ -1,5 +1,5 @@
 import { Handle, Position } from "@xyflow/react";
-import { Info, MoreHorizontal, Play } from "lucide-react";
+import { Info, MoreHorizontal, Play, RotateCcw } from "lucide-react";
 import type { CSSProperties, ReactNode } from "react";
 import { type DataType, TYPE_COLOR } from "../types";
 
@@ -47,13 +47,22 @@ export function NodeFrame({
         <div className="flex-1" />
         {headerAction}
         {showRun && (
-          <button
-            type="button"
-            className="nodrag flex items-center gap-1 rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 hover:bg-green-100"
-          >
-            <Play className="h-3 w-3" />
-            Run
-          </button>
+          <>
+            <button
+              type="button"
+              aria-label="Reset node"
+              className="nodrag text-gray-400 hover:text-gray-700"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+            </button>
+            <button
+              type="button"
+              className="nodrag flex items-center gap-1 rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 hover:bg-green-100"
+            >
+              <Play className="h-3 w-3" />
+              Run
+            </button>
+          </>
         )}
         <button type="button" className="nodrag text-gray-400 hover:text-gray-700">
           <MoreHorizontal className="h-4 w-4" />
