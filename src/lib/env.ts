@@ -1,7 +1,5 @@
 import { z } from "zod";
 
-// Server-only environment contract. Validated lazily (on first call) so the app can be
-// scaffolded/typechecked before real keys exist; routes/tasks call serverEnv() at runtime.
 const serverEnvSchema = z.object({
   DATABASE_URL: z.string().min(1),
   CLERK_SECRET_KEY: z.string().min(1),

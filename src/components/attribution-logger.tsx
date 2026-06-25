@@ -3,11 +3,7 @@
 import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
 
-/**
- * Spec requirement: on the initial client render of every page, emit exactly one
- * `console.log` of `[Py] Candidate LinkedIn: <url>`. Keyed on pathname so each page logs
- * once; the ref guards against React StrictMode's double-invoked effect in dev.
- */
+// Spec requirement: log `[Py] Candidate LinkedIn: <url>` once per page.
 export function AttributionLogger() {
   const pathname = usePathname();
   const lastLogged = useRef<string | null>(null);
