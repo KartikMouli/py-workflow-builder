@@ -37,6 +37,19 @@ export function DashboardView({ workflows }: { workflows: WorkflowListItem[] }) 
     }
   }
 
+  async function createTrialWorkflow() {
+    setBusy(true);
+    try {
+      const res = await fetch("/api/workflows/seed", { method: "POST" });
+      if (!res.ok) throw new Error("Seed failed");
+      const { workflow } = (await res.json()) as { workflow: { id: string } };
+      router.push(`/workflow/${workflow.id}`);
+    } catch {
+      setBusy(false);
+      alert("Couldn't create the Trial Task Workflow. Please try again.");
+    }
+  }
+
   async function onImportFile(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     e.target.value = "";
@@ -131,7 +144,7 @@ export function DashboardView({ workflows }: { workflows: WorkflowListItem[] }) 
           </p>
           <button
             type="button"
-            onClick={() => createWorkflow("Trial Task Workflow")}
+            onClick={createTrialWorkflow}
             disabled={busy}
             className="mt-3 flex w-56 flex-col overflow-hidden rounded-xl border border-gray-200 bg-white text-left hover:border-brand/40 hover:shadow-sm disabled:opacity-50"
           >
