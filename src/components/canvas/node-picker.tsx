@@ -1,10 +1,38 @@
 "use client";
 
 import { useReactFlow } from "@xyflow/react";
-import { FileText, Plus, Search } from "lucide-react";
-import { useState } from "react";
+import { File, Plus, Search } from "lucide-react";
+import { type ReactNode, useState } from "react";
 import { useCanvasStore } from "./store";
-import { type AppNode, createCropImageNode, createGeminiNode } from "./types";
+import { type AppNode, createCropImageNode, createGeminiNode, createStickyNote } from "./types";
+
+function ToolbarButton({
+  label,
+  ariaLabel,
+  onClick,
+  children,
+}: {
+  label: string;
+  ariaLabel: string;
+  onClick: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <div className="group relative">
+      <button
+        type="button"
+        aria-label={ariaLabel}
+        onClick={onClick}
+        className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-600 hover:bg-gray-100"
+      >
+        {children}
+      </button>
+      <span className="pointer-events-none absolute bottom-11 left-1/2 hidden -translate-x-1/2 whitespace-nowrap rounded-md bg-gray-900 px-2 py-1 text-[11px] text-white shadow-lg group-hover:block">
+        {label}
+      </span>
+    </div>
+  );
+}
 
 const ITEMS: {
   key: string;
@@ -22,9 +50,12 @@ export function NodePicker() {
   const addNode = useCanvasStore((s) => s.addNode);
   const { screenToFlowPosition } = useReactFlow();
 
+  function centerPosition() {
+    return screenToFlowPosition({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
+  }
+
   function add(create: (p: { x: number; y: number }) => AppNode) {
-    const pos = screenToFlowPosition({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
-    addNode(create(pos));
+    addNode(create(centerPosition()));
     setOpen(false);
     setQuery("");
   }
@@ -73,21 +104,17 @@ export function NodePicker() {
         </div>
       )}
 
-      <div className="flex items-center gap-1 rounded-full border border-gray-200 bg-white p-1.5 shadow-lg">
-        <button
-          type="button"
-          className="flex h-9 w-9 items-center justify-center rounded-full text-gray-500 hover:bg-gray-100"
+      <div className="flex items-center gap-1 rounded-xl border border-gray-200 bg-white p-1.5 shadow-lg">
+        <ToolbarButton
+          label="Add Sticky Note"
+          ariaLabel="Add sticky note"
+          onClick={() => addNode(createStickyNote(centerPosition()))}
         >
-          <FileText className="h-4 w-4" />
-        </button>
-        <button
-          type="button"
-          onClick={() => setOpen((v) => !v)}
-          aria-label="Add node"
-          className="flex h-9 w-9 items-center justify-center rounded-full bg-brand text-white hover:bg-brand-hover"
-        >
+          <File className="h-4 w-4" />
+        </ToolbarButton>
+        <ToolbarButton label="Add Node" ariaLabel="Add node" onClick={() => setOpen((v) => !v)}>
           <Plus className="h-4 w-4" />
-        </button>
+        </ToolbarButton>
       </div>
     </div>
   );
