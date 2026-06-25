@@ -28,7 +28,9 @@ export function GeminiNodeView({ id, data, selected }: NodeProps<GeminiNode>) {
     >
       <div className="space-y-3">
         <div className="relative">
-          <label className="mb-1 block text-xs font-medium text-gray-600">Prompt</label>
+          <label className="mb-1 block text-xs font-medium text-gray-600">
+            Prompt <span className="text-red-500">*</span>
+          </label>
           <textarea
             value={data.prompt ?? ""}
             onChange={(e) => updateNodeData(id, { prompt: e.target.value })}

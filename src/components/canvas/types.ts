@@ -1,6 +1,6 @@
 import type { Edge, Node } from "@xyflow/react";
 
-export type DataType = "text" | "image" | "video" | "audio" | "file" | "any";
+export type DataType = "text" | "number" | "image" | "video" | "audio" | "file" | "any";
 
 export const NODE_KINDS = ["request-inputs", "crop-image", "gemini", "response"] as const;
 export type NodeKind = (typeof NODE_KINDS)[number];
@@ -54,9 +54,10 @@ export type AppEdge = Edge;
 // Handle/edge color by data type (sampled palette: text=orange, image=blue).
 export const TYPE_COLOR: Record<DataType, string> = {
   text: "#f59e0b",
+  number: "#ec4899",
   image: "#3b82f6",
-  video: "#a855f7",
-  audio: "#22c55e",
+  video: "#22c55e",
+  audio: "#06b6d4",
   file: "#9ca3af",
   any: "#6058e8",
 };
@@ -72,6 +73,8 @@ export function fieldDataType(t: FieldType): DataType {
       return "audio";
     case "file":
       return "file";
+    case "number":
+      return "number";
     default:
       return "text";
   }

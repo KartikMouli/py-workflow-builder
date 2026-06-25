@@ -20,7 +20,9 @@ export function CropImageNodeView({ id, data, selected }: NodeProps<CropImageNod
     <NodeFrame title="Crop Image" selected={selected} showRun icon={<Crop className="h-3.5 w-3.5" />}>
       <div className="space-y-3">
         <div className="relative">
-          <label className="mb-1 block text-xs font-medium text-gray-600">Input Image</label>
+          <label className="mb-1 block text-xs font-medium text-gray-600">
+            Input Image <span className="text-red-500">*</span>
+          </label>
           <button
             type="button"
             className="nodrag w-full rounded-md border border-dashed border-gray-300 py-3 text-xs text-gray-400 hover:bg-gray-100"
@@ -31,7 +33,7 @@ export function CropImageNodeView({ id, data, selected }: NodeProps<CropImageNod
         </div>
 
         {PARAMS.map((p) => (
-          <div key={p.key}>
+          <div key={p.key} className="relative">
             <div className="mb-1 flex items-center justify-between">
               <label className="text-xs font-medium text-gray-600">{p.label}</label>
               <input
@@ -51,6 +53,7 @@ export function CropImageNodeView({ id, data, selected }: NodeProps<CropImageNod
               onChange={(e) => updateNodeData(id, { [p.key]: Number(e.target.value) })}
               className="nodrag w-full accent-brand"
             />
+            <RowHandle side="left" kind="target" id={p.key} dataType="number" />
           </div>
         ))}
 
