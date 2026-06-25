@@ -10,7 +10,7 @@ import {
   ReactFlow,
   ReactFlowProvider,
 } from "@xyflow/react";
-import { Loader2 } from "lucide-react";
+import { Check, Loader2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { CanvasTopBar } from "./canvas-top-bar";
 import { NodePicker } from "./node-picker";
@@ -71,7 +71,7 @@ export function WorkflowCanvas({
   const liveRun = useCanvasStore((s) => s.liveRun);
   const startLiveRun = useCanvasStore((s) => s.startLiveRun);
   const clearLiveRun = useCanvasStore((s) => s.clearLiveRun);
-  const [saving, setSaving] = useState(false);
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
 
   const displayEdges = useMemo(
     () => (liveRun ? edges.map((e) => ({ ...e, animated: true })) : edges),
@@ -124,17 +124,23 @@ export function WorkflowCanvas({
   useEffect(() => {
     if (nodes.length === 0) return;
     const t = setTimeout(() => {
-      setSaving(true);
+      setSaveState("saving");
       void fetch(`/api/workflows/${workflowId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ graph: serializeGraph(nodes, edges) }),
       })
         .catch(() => {})
-        .finally(() => setSaving(false));
+        .finally(() => setSaveState("saved"));
     }, 800);
     return () => clearTimeout(t);
   }, [nodes, edges, workflowId]);
+
+  useEffect(() => {
+    if (saveState !== "saved") return;
+    const t = setTimeout(() => setSaveState("idle"), 1500);
+    return () => clearTimeout(t);
+  }, [saveState]);
 
   return (
     <ReactFlowProvider>
@@ -155,10 +161,19 @@ export function WorkflowCanvas({
           <MiniMap pannable zoomable />
           <Controls />
         </ReactFlow>
-        {saving && (
-          <div className="absolute left-1/2 top-4 z-10 flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-500 shadow-sm">
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            Saving…
+        {saveState !== "idle" && (
+          <div className="absolute left-1/2 top-4 z-10 flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs shadow-sm">
+            {saveState === "saving" ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-gray-500" />
+                <span className="text-gray-500">Saving…</span>
+              </>
+            ) : (
+              <>
+                <Check className="h-3.5 w-3.5 text-green-600" />
+                <span className="font-medium text-green-600">Saved</span>
+              </>
+            )}
           </div>
         )}
         <CanvasTopBar
