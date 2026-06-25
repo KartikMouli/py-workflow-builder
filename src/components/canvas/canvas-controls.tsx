@@ -121,14 +121,6 @@ export function CanvasMinimap() {
 
   return (
     <div className="absolute bottom-6 right-6 z-10">
-      <button
-        type="button"
-        aria-label="Hide minimap"
-        onClick={() => setOpen(false)}
-        className="absolute bottom-full right-0 mb-1.5 flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 shadow-md hover:bg-gray-50"
-      >
-        <Minimize2 className="h-4 w-4" />
-      </button>
       <div className="overflow-hidden rounded-xl border border-gray-800 shadow-lg">
         <MiniMap
           pannable
@@ -140,6 +132,14 @@ export function CanvasMinimap() {
           style={{ position: "relative", margin: 0, width: 220, height: 140, inset: "auto" }}
         />
       </div>
+      <button
+        type="button"
+        aria-label="Hide minimap"
+        onClick={() => setOpen(false)}
+        className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 shadow-md hover:bg-gray-50"
+      >
+        <Minimize2 className="h-4 w-4" />
+      </button>
     </div>
   );
 }
