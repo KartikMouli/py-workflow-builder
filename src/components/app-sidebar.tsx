@@ -8,6 +8,8 @@ import {
   Gift,
   Library,
   MessageSquare,
+  PanelLeftClose,
+  PanelLeftOpen,
   Plus,
   Search,
   Settings,
@@ -15,6 +17,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 
 const NAV: { label: string; icon: typeof Plus; href: string | null }[] = [
   { label: "New task", icon: Plus, href: null },
@@ -29,10 +32,70 @@ const NAV: { label: string; icon: typeof Plus; href: string | null }[] = [
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const [collapsed, setCollapsed] = useState(false);
+
+  if (collapsed) {
+    return (
+      <aside className="flex h-full w-16 shrink-0 flex-col items-center border-r border-gray-200 bg-sidebar py-4">
+        <button
+          type="button"
+          aria-label="Expand sidebar"
+          onClick={() => setCollapsed(false)}
+          className="mb-4 flex h-9 w-9 items-center justify-center rounded-lg text-gray-600 hover:bg-[#e6e6e6]"
+        >
+          <PanelLeftOpen className="h-5 w-5" />
+        </button>
+        <nav className="flex flex-1 flex-col items-center gap-1">
+          {NAV.map(({ label, icon: Icon, href }) => {
+            const active = href ? pathname.startsWith(href) : false;
+            const cls = `flex h-9 w-9 items-center justify-center rounded-lg ${
+              active ? "bg-[#dadada] text-gray-900" : "text-gray-600 hover:bg-[#e6e6e6]"
+            }`;
+            return href ? (
+              <Link key={label} href={href} title={label} className={cls}>
+                <Icon className="h-4 w-4" />
+              </Link>
+            ) : (
+              <button key={label} type="button" title={label} className={`${cls} cursor-default`}>
+                <Icon className="h-4 w-4" />
+              </button>
+            );
+          })}
+        </nav>
+        <div className="flex flex-col items-center gap-2">
+          <button
+            type="button"
+            title="Settings"
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-600 hover:bg-[#e6e6e6]"
+          >
+            <Settings className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            title="Claim Offer"
+            className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand text-white hover:bg-brand-hover"
+          >
+            <Gift className="h-4 w-4" />
+          </button>
+          <UserButton />
+        </div>
+      </aside>
+    );
+  }
 
   return (
     <aside className="flex h-full w-74 shrink-0 flex-col border-r border-gray-200 bg-sidebar">
-      <div className="px-5 py-4 text-2xl font-bold tracking-tight text-gray-900">Py</div>
+      <div className="flex items-center justify-between px-5 py-4">
+        <span className="text-2xl font-bold tracking-tight text-gray-900">Py</span>
+        <button
+          type="button"
+          aria-label="Collapse sidebar"
+          onClick={() => setCollapsed(true)}
+          className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-500 hover:bg-[#e6e6e6]"
+        >
+          <PanelLeftClose className="h-5 w-5" />
+        </button>
+      </div>
 
       <nav className="flex-1 space-y-0.5 px-3">
         {NAV.map(({ label, icon: Icon, href }) => {
