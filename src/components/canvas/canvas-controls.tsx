@@ -120,24 +120,26 @@ export function CanvasMinimap() {
   }
 
   return (
-    <div className="absolute bottom-6 right-6 z-10 overflow-hidden rounded-xl border border-gray-800 shadow-lg">
-      <MiniMap
-        pannable
-        zoomable
-        bgColor="#171717"
-        maskColor="rgba(0,0,0,0.55)"
-        nodeColor={(n: Node) => MAP_COLOR[n.type ?? ""] ?? "#9ca3af"}
-        nodeStrokeColor="transparent"
-        style={{ position: "relative", margin: 0, width: 220, height: 140, inset: "auto" }}
-      />
+    <div className="absolute bottom-6 right-6 z-10">
       <button
         type="button"
         aria-label="Hide minimap"
         onClick={() => setOpen(false)}
-        className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-md bg-white/90 text-gray-700 shadow-sm hover:bg-white"
+        className="absolute bottom-full right-0 mb-1.5 flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 shadow-md hover:bg-gray-50"
       >
-        <Minimize2 className="h-3.5 w-3.5" />
+        <Minimize2 className="h-4 w-4" />
       </button>
+      <div className="overflow-hidden rounded-xl border border-gray-800 shadow-lg">
+        <MiniMap
+          pannable
+          zoomable
+          bgColor="#171717"
+          maskColor="rgba(0,0,0,0.55)"
+          nodeColor={(n: Node) => MAP_COLOR[n.type ?? ""] ?? "#9ca3af"}
+          nodeStrokeColor="transparent"
+          style={{ position: "relative", margin: 0, width: 220, height: 140, inset: "auto" }}
+        />
+      </div>
     </div>
   );
 }
