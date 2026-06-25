@@ -5,11 +5,11 @@ import { useEffect, useRef, useState } from "react";
 import type { WorkflowListItem } from "./dashboard-view";
 
 function formatEdited(iso: string) {
-  const d = new Date(iso);
-  return `Edited ${d.toLocaleDateString(undefined, {
+  return `Edited ${new Date(iso).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",
+    timeZone: "UTC",
   })}`;
 }
 
