@@ -27,6 +27,7 @@ export function GeminiNodeView({ id, data, selected }: NodeProps<GeminiNode>) {
     <NodeFrame
       title="Gemini 3 Flash"
       info="Generate text with Google's Gemini 3 Flash. Connect a prompt and optional image, video, or audio."
+      menuNodeId={id}
       selected={selected}
       showRun
       width={300}

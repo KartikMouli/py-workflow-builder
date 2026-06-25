@@ -1,6 +1,7 @@
 import { Handle, Position } from "@xyflow/react";
-import { Info, MoreHorizontal, Play, RotateCcw } from "lucide-react";
-import type { CSSProperties, ReactNode } from "react";
+import { Copy, CopyPlus, Info, Lock, LockOpen, MoreHorizontal, Play, RotateCcw, Trash2 } from "lucide-react";
+import { type CSSProperties, type ReactNode, useState } from "react";
+import { useCanvasStore } from "../store";
 import { type DataType, TYPE_COLOR } from "../types";
 
 export function InfoHint({ text }: { text: string }) {
@@ -14,9 +15,86 @@ export function InfoHint({ text }: { text: string }) {
   );
 }
 
+function NodeMenu({ nodeId }: { nodeId: string }) {
+  const [open, setOpen] = useState(false);
+  const duplicateNode = useCanvasStore((s) => s.duplicateNode);
+  const toggleNodeLock = useCanvasStore((s) => s.toggleNodeLock);
+  const removeNode = useCanvasStore((s) => s.removeNode);
+  const locked = useCanvasStore((s) => s.nodes.find((n) => n.id === nodeId)?.draggable === false);
+
+  const run = (fn: () => void) => () => {
+    fn();
+    setOpen(false);
+  };
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        aria-label="Node options"
+        onClick={() => setOpen((v) => !v)}
+        className="nodrag flex h-6 w-6 items-center justify-center rounded-md border border-gray-200 text-gray-500 hover:bg-gray-50"
+      >
+        <MoreHorizontal className="h-4 w-4" />
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 top-7 z-20 w-48 overflow-hidden rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
+            <MenuItem icon={<Copy className="h-3.5 w-3.5" />} disabled={locked} onClick={run(() => duplicateNode(nodeId, false))}>
+              Duplicate
+            </MenuItem>
+            <MenuItem icon={<CopyPlus className="h-3.5 w-3.5" />} disabled={locked} onClick={run(() => duplicateNode(nodeId, true))}>
+              Duplicate with edges
+            </MenuItem>
+            <MenuItem
+              icon={locked ? <LockOpen className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />}
+              onClick={run(() => toggleNodeLock(nodeId))}
+            >
+              {locked ? "Unlock" : "Lock"}
+            </MenuItem>
+            <MenuItem icon={<Trash2 className="h-3.5 w-3.5" />} disabled={locked} danger onClick={run(() => removeNode(nodeId))}>
+              Delete
+            </MenuItem>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function MenuItem({
+  icon,
+  children,
+  onClick,
+  disabled,
+  danger,
+}: {
+  icon: ReactNode;
+  children: ReactNode;
+  onClick: () => void;
+  disabled?: boolean;
+  danger?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className={`nodrag flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs disabled:cursor-not-allowed disabled:opacity-40 ${
+        danger ? "text-red-600 hover:bg-red-50" : "text-gray-700 hover:bg-gray-50"
+      }`}
+    >
+      {icon}
+      {children}
+    </button>
+  );
+}
+
 export function NodeFrame({
   title,
   info,
+  menuNodeId,
   selected,
   running,
   showRun,
@@ -26,6 +104,7 @@ export function NodeFrame({
 }: {
   title: string;
   info?: string;
+  menuNodeId?: string;
   selected?: boolean;
   running?: boolean;
   showRun?: boolean;
@@ -64,9 +143,7 @@ export function NodeFrame({
             </button>
           </>
         )}
-        <button type="button" className="nodrag text-gray-400 hover:text-gray-700">
-          <MoreHorizontal className="h-4 w-4" />
-        </button>
+        {menuNodeId && <NodeMenu nodeId={menuNodeId} />}
       </div>
       <div className="p-3">{children}</div>
     </div>

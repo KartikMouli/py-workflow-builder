@@ -23,6 +23,7 @@ export function CropImageNodeView({ id, data, selected }: NodeProps<CropImageNod
     <NodeFrame
       title="Crop Image"
       info="Crop an image to a region set by X/Y position and width/height percentages."
+      menuNodeId={id}
       selected={selected}
       showRun
       running={runState?.status === "RUNNING"}
