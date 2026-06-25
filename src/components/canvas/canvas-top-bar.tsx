@@ -1,7 +1,12 @@
 "use client";
 
-import { ArrowLeft, History, Play, Square } from "lucide-react";
+import { ArrowLeft, Coins, History, Play, Square } from "lucide-react";
 import Link from "next/link";
+import { useMemo } from "react";
+import { useCanvasStore } from "./store";
+
+// No real billing — Est is a rough per-node placeholder in Magica's "M" credit unit.
+const NODE_COST_M: Record<string, number> = { gemini: 0.0025, "crop-image": 0.001 };
 
 export function CanvasTopBar({
   name,
@@ -14,6 +19,12 @@ export function CanvasTopBar({
   onRun: () => void;
   onStop: () => void;
 }) {
+  const nodes = useCanvasStore((s) => s.nodes);
+  const estimate = useMemo(
+    () => nodes.reduce((sum, n) => sum + (NODE_COST_M[n.type ?? ""] ?? 0), 0),
+    [nodes],
+  );
+
   return (
     <>
       <div className="absolute left-4 top-4 z-10 flex items-center gap-2 rounded-full border border-gray-200 bg-white py-1.5 pl-2 pr-4 shadow-sm">
@@ -42,14 +53,24 @@ export function CanvasTopBar({
             </button>
           </>
         ) : (
-          <button
-            type="button"
-            onClick={onRun}
-            className="flex items-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-brand-hover"
-          >
-            <Play className="h-4 w-4" />
-            Run
-          </button>
+          <>
+            <span className="flex items-center gap-1 rounded-full border border-gray-200 bg-white px-2.5 py-1.5 text-xs text-gray-500 shadow-sm">
+              <Coins className="h-3.5 w-3.5 text-gray-400" />
+              Est <span className="font-medium text-gray-700">~{estimate.toFixed(2)} M</span>
+            </span>
+            <span className="flex items-center gap-1 rounded-full border border-gray-200 bg-white px-2.5 py-1.5 text-xs text-gray-500 shadow-sm">
+              <Coins className="h-3.5 w-3.5 text-gray-400" />
+              Bal <span className="font-medium text-gray-700">0.00 M</span>
+            </span>
+            <button
+              type="button"
+              onClick={onRun}
+              className="flex items-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-brand-hover"
+            >
+              <Play className="h-4 w-4" />
+              Run
+            </button>
+          </>
         )}
         <button
           type="button"
