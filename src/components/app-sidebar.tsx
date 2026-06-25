@@ -31,7 +31,7 @@ export function AppSidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="flex h-full w-60 shrink-0 flex-col border-r border-gray-200 bg-sidebar">
+    <aside className="flex h-full w-74 shrink-0 flex-col border-r border-gray-200 bg-sidebar">
       <div className="px-5 py-4 text-2xl font-bold tracking-tight text-gray-900">Py</div>
 
       <nav className="flex-1 space-y-0.5 px-3">
