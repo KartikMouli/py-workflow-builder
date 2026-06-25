@@ -28,6 +28,7 @@ const nodeTypes = {
 } as NodeTypes;
 
 export function WorkflowCanvas({
+  workflowId,
   name,
   initialGraph,
 }: {
@@ -47,6 +48,32 @@ export function WorkflowCanvas({
       initialGraph.nodes.length > 0 ? initialGraph.nodes : createPrePlacedNodes();
     setGraph(seeded, initialGraph.edges);
   }, [initialGraph, setGraph]);
+
+  useEffect(() => {
+    if (nodes.length === 0) return;
+    const t = setTimeout(() => {
+      const cleanNodes = nodes.map((n) => ({
+        id: n.id,
+        type: n.type,
+        position: n.position,
+        data: n.data,
+        ...(n.deletable === false ? { deletable: false } : {}),
+      }));
+      const cleanEdges = edges.map((e) => ({
+        id: e.id,
+        source: e.source,
+        target: e.target,
+        sourceHandle: e.sourceHandle ?? null,
+        targetHandle: e.targetHandle ?? null,
+      }));
+      void fetch(`/api/workflows/${workflowId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ graph: { nodes: cleanNodes, edges: cleanEdges } }),
+      }).catch(() => {});
+    }, 800);
+    return () => clearTimeout(t);
+  }, [nodes, edges, workflowId]);
 
   return (
     <ReactFlowProvider>
