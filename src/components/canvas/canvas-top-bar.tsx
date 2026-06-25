@@ -1,9 +1,19 @@
 "use client";
 
-import { ArrowLeft, History, Play } from "lucide-react";
+import { ArrowLeft, History, Play, Square } from "lucide-react";
 import Link from "next/link";
 
-export function CanvasTopBar({ name }: { name: string }) {
+export function CanvasTopBar({
+  name,
+  isRunning,
+  onRun,
+  onStop,
+}: {
+  name: string;
+  isRunning: boolean;
+  onRun: () => void;
+  onStop: () => void;
+}) {
   return (
     <>
       <div className="absolute left-4 top-4 z-10 flex items-center gap-2 rounded-full border border-gray-200 bg-white py-1.5 pl-2 pr-4 shadow-sm">
@@ -16,12 +26,31 @@ export function CanvasTopBar({ name }: { name: string }) {
         <span className="text-sm font-medium text-gray-800">{name}</span>
       </div>
       <div className="absolute right-4 top-4 z-10 flex items-center gap-2">
-        <button
-          type="button"
-          className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand text-white shadow-sm hover:bg-brand-hover"
-        >
-          <Play className="h-4 w-4" />
-        </button>
+        {isRunning ? (
+          <>
+            <span className="flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm">
+              <span className="h-2 w-2 animate-pulse rounded-full bg-brand" />
+              Viewing live run
+            </span>
+            <button
+              type="button"
+              onClick={onStop}
+              className="flex items-center gap-1.5 rounded-lg bg-[#e42125] px-3 py-2 text-xs font-medium text-white shadow-sm hover:brightness-95"
+            >
+              <Square className="h-3.5 w-3.5" />
+              Stop run
+            </button>
+          </>
+        ) : (
+          <button
+            type="button"
+            onClick={onRun}
+            className="flex items-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-brand-hover"
+          >
+            <Play className="h-4 w-4" />
+            Run
+          </button>
+        )}
         <button
           type="button"
           className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 shadow-sm hover:bg-gray-50"

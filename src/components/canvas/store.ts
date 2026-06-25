@@ -13,12 +13,19 @@ import type { AppEdge, AppNode } from "./types";
 
 type Snapshot = { nodes: AppNode[]; edges: AppEdge[] };
 
+export type NodeRunState = { status?: string; error?: string; durationMs?: number; text?: string };
+
+type LiveRun = { dbRunId: string; triggerRunId: string; token: string } | null;
+
 type CanvasState = {
   nodes: AppNode[];
   edges: AppEdge[];
   past: Snapshot[];
   future: Snapshot[];
   dragging: boolean;
+  liveRun: LiveRun;
+  runStates: Record<string, NodeRunState>;
+  outputs: Record<string, Record<string, unknown>>;
   onNodesChange: (changes: NodeChange<AppNode>[]) => void;
   onEdgesChange: (changes: EdgeChange<AppEdge>[]) => void;
   onConnect: (connection: Connection) => void;
@@ -28,6 +35,10 @@ type CanvasState = {
   setGraph: (nodes: AppNode[], edges: AppEdge[]) => void;
   undo: () => void;
   redo: () => void;
+  startLiveRun: (run: NonNullable<LiveRun>) => void;
+  setRunStates: (states: Record<string, NodeRunState>) => void;
+  setOutputs: (outputs: Record<string, Record<string, unknown>>) => void;
+  clearLiveRun: () => void;
 };
 
 const HISTORY_LIMIT = 50;
@@ -42,6 +53,9 @@ export const useCanvasStore = create<CanvasState>((set, get) => {
     past: [],
     future: [],
     dragging: false,
+    liveRun: null,
+    runStates: {},
+    outputs: {},
 
     onNodesChange: (changes) => {
       const removing = changes.some((c) => c.type === "remove");
@@ -109,6 +123,11 @@ export const useCanvasStore = create<CanvasState>((set, get) => {
         past: [...s.past, { nodes: s.nodes, edges: s.edges }].slice(-HISTORY_LIMIT),
       }));
     },
+
+    startLiveRun: (run) => set({ liveRun: run, runStates: {}, outputs: {} }),
+    setRunStates: (states) => set({ runStates: states }),
+    setOutputs: (outputs) => set({ outputs }),
+    clearLiveRun: () => set({ liveRun: null }),
   };
 });
 

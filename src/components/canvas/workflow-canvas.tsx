@@ -10,13 +10,14 @@ import {
   ReactFlow,
   ReactFlowProvider,
 } from "@xyflow/react";
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { CanvasTopBar } from "./canvas-top-bar";
 import { NodePicker } from "./node-picker";
 import { CropImageNodeView } from "./nodes/crop-image-node";
 import { GeminiNodeView } from "./nodes/gemini-node";
 import { RequestInputsNodeView } from "./nodes/request-inputs-node";
 import { ResponseNodeView } from "./nodes/response-node";
+import { RunSubscriber } from "./run-subscriber";
 import { useCanvasStore } from "./store";
 import { type AppEdge, type AppNode, createPrePlacedNodes } from "./types";
 
@@ -26,6 +27,25 @@ const nodeTypes = {
   gemini: GeminiNodeView,
   response: ResponseNodeView,
 } as NodeTypes;
+
+function serializeGraph(nodes: AppNode[], edges: AppEdge[]) {
+  return {
+    nodes: nodes.map((n) => ({
+      id: n.id,
+      type: n.type,
+      position: n.position,
+      data: n.data,
+      ...(n.deletable === false ? { deletable: false } : {}),
+    })),
+    edges: edges.map((e) => ({
+      id: e.id,
+      source: e.source,
+      target: e.target,
+      sourceHandle: e.sourceHandle ?? null,
+      targetHandle: e.targetHandle ?? null,
+    })),
+  };
+}
 
 export function WorkflowCanvas({
   workflowId,
@@ -45,6 +65,27 @@ export function WorkflowCanvas({
   const setGraph = useCanvasStore((s) => s.setGraph);
   const undo = useCanvasStore((s) => s.undo);
   const redo = useCanvasStore((s) => s.redo);
+  const liveRun = useCanvasStore((s) => s.liveRun);
+  const startLiveRun = useCanvasStore((s) => s.startLiveRun);
+  const clearLiveRun = useCanvasStore((s) => s.clearLiveRun);
+
+  const startRun = useCallback(async () => {
+    const { nodes: n, edges: e } = useCanvasStore.getState();
+    const res = await fetch(`/api/workflows/${workflowId}/runs`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ scope: "FULL", graph: serializeGraph(n, e) }),
+    });
+    if (!res.ok) return;
+    const { dbRunId, triggerRunId, publicAccessToken } = await res.json();
+    startLiveRun({ dbRunId, triggerRunId, token: publicAccessToken });
+  }, [workflowId, startLiveRun]);
+
+  const stopRun = useCallback(async () => {
+    const current = useCanvasStore.getState().liveRun;
+    if (current) await fetch(`/api/runs/${current.dbRunId}/cancel`, { method: "POST" }).catch(() => {});
+    clearLiveRun();
+  }, [clearLiveRun]);
 
   useEffect(() => {
     const seeded =
@@ -74,24 +115,10 @@ export function WorkflowCanvas({
   useEffect(() => {
     if (nodes.length === 0) return;
     const t = setTimeout(() => {
-      const cleanNodes = nodes.map((n) => ({
-        id: n.id,
-        type: n.type,
-        position: n.position,
-        data: n.data,
-        ...(n.deletable === false ? { deletable: false } : {}),
-      }));
-      const cleanEdges = edges.map((e) => ({
-        id: e.id,
-        source: e.source,
-        target: e.target,
-        sourceHandle: e.sourceHandle ?? null,
-        targetHandle: e.targetHandle ?? null,
-      }));
       void fetch(`/api/workflows/${workflowId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ graph: { nodes: cleanNodes, edges: cleanEdges } }),
+        body: JSON.stringify({ graph: serializeGraph(nodes, edges) }),
       }).catch(() => {});
     }, 800);
     return () => clearTimeout(t);
@@ -117,8 +144,20 @@ export function WorkflowCanvas({
           <MiniMap pannable zoomable />
           <Controls />
         </ReactFlow>
-        <CanvasTopBar name={name} />
+        <CanvasTopBar
+          name={name}
+          isRunning={!!liveRun}
+          onRun={startRun}
+          onStop={stopRun}
+        />
         <NodePicker />
+        {liveRun && (
+          <RunSubscriber
+            triggerRunId={liveRun.triggerRunId}
+            token={liveRun.token}
+            dbRunId={liveRun.dbRunId}
+          />
+        )}
       </div>
     </ReactFlowProvider>
   );
