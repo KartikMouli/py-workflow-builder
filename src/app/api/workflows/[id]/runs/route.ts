@@ -10,6 +10,7 @@ import type { runWorkflowTask } from "@/trigger/run-workflow";
 
 const startRunSchema = z.object({
   scope: z.enum(["FULL", "PARTIAL", "SINGLE"]).default("FULL"),
+  targets: z.array(z.string()).optional(),
   graph: graphSchema,
 });
 
@@ -29,7 +30,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const handle = await tasks.trigger<typeof runWorkflowTask>(
     "run-workflow",
-    { dbRunId: run.id, nodes: parsed.data.graph.nodes, edges: parsed.data.graph.edges },
+    {
+      dbRunId: run.id,
+      nodes: parsed.data.graph.nodes,
+      edges: parsed.data.graph.edges,
+      scope: parsed.data.scope,
+      targets: parsed.data.targets,
+    },
     { tags: [`workflow:${id}`, `run:${run.id}`] },
   );
 

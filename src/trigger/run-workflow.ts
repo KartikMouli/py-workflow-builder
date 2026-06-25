@@ -19,6 +19,8 @@ type RunWorkflowPayload = {
   dbRunId: string;
   nodes: GraphNode[];
   edges: GraphEdge[];
+  scope?: "FULL" | "PARTIAL" | "SINGLE";
+  targets?: string[];
 };
 
 type NodeOutput = Record<string, unknown>;
@@ -115,7 +117,10 @@ export const runWorkflowTask = task({
 
     function resolveInput<T>(nodeId: string, handleId: string, fallback: T): T | unknown {
       const edge = edges.find((e) => e.target === nodeId && e.targetHandle === handleId);
-      if (edge) return outputs[edge.source]?.[edge.sourceHandle ?? "default"];
+      if (edge) {
+        const value = outputs[edge.source]?.[edge.sourceHandle ?? "default"];
+        if (value !== undefined && value !== null && value !== "") return value;
+      }
       return fallback;
     }
 
@@ -167,6 +172,8 @@ export const runWorkflowTask = task({
       }
     }
 
+    // SINGLE runs execute only the targeted node(s) — upstream nodes are not re-run.
+    const single = payload.scope === "SINGLE";
     const memo = new Map<string, Promise<NodeOutput>>();
     function schedule(nodeId: string): Promise<NodeOutput> {
       const existing = memo.get(nodeId);
@@ -174,7 +181,9 @@ export const runWorkflowTask = task({
       const promise = (async () => {
         const node = nodeById.get(nodeId);
         if (!node) return {};
-        const parents = [...new Set(edges.filter((e) => e.target === nodeId).map((e) => e.source))];
+        const parents = single
+          ? []
+          : [...new Set(edges.filter((e) => e.target === nodeId).map((e) => e.source))];
         await Promise.all(parents.map(schedule));
         const startedAt = Date.now();
         state[nodeId] = { ...state[nodeId], status: NodeStatus.RUNNING };
@@ -200,8 +209,10 @@ export const runWorkflowTask = task({
       return promise;
     }
 
-    const settled = await Promise.allSettled(nodes.map((n) => schedule(n.id)));
+    const rootIds = payload.targets?.length ? payload.targets : nodes.map((n) => n.id);
+    const settled = await Promise.allSettled(rootIds.map((id) => schedule(id)));
     const failed = settled.some((s) => s.status === "rejected");
+    const ranNodes = nodes.filter((n) => state[n.id]);
 
     await prisma.$transaction([
       prisma.run.update({
@@ -212,7 +223,7 @@ export const runWorkflowTask = task({
         },
       }),
       prisma.nodeRun.createMany({
-        data: nodes.map((n) => ({
+        data: ranNodes.map((n) => ({
           runId: dbRunId,
           nodeId: n.id,
           nodeType: n.type ?? "unknown",
