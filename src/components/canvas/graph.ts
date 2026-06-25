@@ -110,20 +110,35 @@ const REQUIRED_INPUTS: Record<string, { handle: string; label: string; dataKey: 
 const requiredString = z.string().min(1);
 
 // Returns the first validation error message, or null if all required inputs are satisfied.
-// FULL run: a required input is satisfied by an incoming edge or a manual value.
+// FULL run: a connected input is satisfied by its upstream — but we trace one hop, so a
+//   required input wired to an empty Request-Inputs field is still caught before running.
+//   A producing source (Gemini/Crop) is trusted; it gets validated on its own pass.
 // SINGLE run: upstream nodes don't run, so only a manual value satisfies it.
 export function validateRunInputs(
   nodes: AppNode[],
   edges: AppEdge[],
   scope: "FULL" | "SINGLE",
 ): string | null {
+  const nodeById = new Map(nodes.map((n) => [n.id, n]));
+  const hasValue = (v: unknown) =>
+    requiredString.safeParse(typeof v === "string" ? v.trim() : v).success;
+
   for (const node of nodes) {
     for (const req of REQUIRED_INPUTS[node.type ?? ""] ?? []) {
-      const connected = edges.some((e) => e.target === node.id && e.targetHandle === req.handle);
-      if (scope === "FULL" && connected) continue;
+      const edge = edges.find((e) => e.target === node.id && e.targetHandle === req.handle);
+
+      if (scope === "FULL" && edge) {
+        const source = nodeById.get(edge.source);
+        if (source?.type === "request-inputs") {
+          const field = source.data.fields.find((f) => f.id === edge.sourceHandle);
+          if (hasValue(field?.value)) continue;
+          return `"${req.label}" is connected to an empty input — fill it in or enter a value.`;
+        }
+        continue;
+      }
+
       const value = (node.data as Record<string, unknown>)[req.dataKey];
-      const parsed = requiredString.safeParse(typeof value === "string" ? value.trim() : value);
-      if (!parsed.success) return `"${req.label}" is required — enter a value or connect an input.`;
+      if (!hasValue(value)) return `"${req.label}" is required — enter a value or connect an input.`;
     }
   }
   return null;
