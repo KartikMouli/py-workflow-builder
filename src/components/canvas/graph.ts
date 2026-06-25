@@ -123,7 +123,7 @@ export function validateRunInputs(
       if (scope === "FULL" && connected) continue;
       const value = (node.data as Record<string, unknown>)[req.dataKey];
       const parsed = requiredString.safeParse(typeof value === "string" ? value.trim() : value);
-      if (!parsed.success) return `"${req.label}" ${parsed.error.issues[0].message}`;
+      if (!parsed.success) return `"${req.label}" is required — enter a value or connect an input.`;
     }
   }
   return null;
