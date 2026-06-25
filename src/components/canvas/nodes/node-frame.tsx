@@ -1,5 +1,5 @@
 import { Handle, Position } from "@xyflow/react";
-import { Copy, CopyPlus, Info, Lock, LockOpen, MoreHorizontal, Play, RotateCcw, Trash2 } from "lucide-react";
+import { Info, MoreHorizontal, Play, RotateCcw } from "lucide-react";
 import { type CSSProperties, type ReactNode, useState } from "react";
 import { useCanvasStore } from "../store";
 import { type DataType, TYPE_COLOR } from "../types";
@@ -15,12 +15,11 @@ export function InfoHint({ text }: { text: string }) {
   );
 }
 
-function NodeMenu({ nodeId }: { nodeId: string }) {
+function NodeMenu({ nodeId, locked }: { nodeId: string; locked: boolean }) {
   const [open, setOpen] = useState(false);
   const duplicateNode = useCanvasStore((s) => s.duplicateNode);
   const toggleNodeLock = useCanvasStore((s) => s.toggleNodeLock);
   const removeNode = useCanvasStore((s) => s.removeNode);
-  const locked = useCanvasStore((s) => s.nodes.find((n) => n.id === nodeId)?.draggable === false);
 
   const run = (fn: () => void) => () => {
     fn();
@@ -41,19 +40,14 @@ function NodeMenu({ nodeId }: { nodeId: string }) {
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
           <div className="absolute right-0 top-7 z-20 w-48 overflow-hidden rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
-            <MenuItem icon={<Copy className="h-3.5 w-3.5" />} disabled={locked} onClick={run(() => duplicateNode(nodeId, false))}>
+            <MenuItem disabled={locked} onClick={run(() => duplicateNode(nodeId, false))}>
               Duplicate
             </MenuItem>
-            <MenuItem icon={<CopyPlus className="h-3.5 w-3.5" />} disabled={locked} onClick={run(() => duplicateNode(nodeId, true))}>
+            <MenuItem disabled={locked} onClick={run(() => duplicateNode(nodeId, true))}>
               Duplicate with edges
             </MenuItem>
-            <MenuItem
-              icon={locked ? <LockOpen className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />}
-              onClick={run(() => toggleNodeLock(nodeId))}
-            >
-              {locked ? "Unlock" : "Lock"}
-            </MenuItem>
-            <MenuItem icon={<Trash2 className="h-3.5 w-3.5" />} disabled={locked} danger onClick={run(() => removeNode(nodeId))}>
+            <MenuItem onClick={run(() => toggleNodeLock(nodeId))}>{locked ? "Unlock" : "Lock"}</MenuItem>
+            <MenuItem disabled={locked} danger onClick={run(() => removeNode(nodeId))}>
               Delete
             </MenuItem>
           </div>
@@ -64,13 +58,11 @@ function NodeMenu({ nodeId }: { nodeId: string }) {
 }
 
 function MenuItem({
-  icon,
   children,
   onClick,
   disabled,
   danger,
 }: {
-  icon: ReactNode;
   children: ReactNode;
   onClick: () => void;
   disabled?: boolean;
@@ -81,11 +73,10 @@ function MenuItem({
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className={`nodrag flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs disabled:cursor-not-allowed disabled:opacity-40 ${
+      className={`nodrag block w-full px-3 py-1.5 text-left text-xs disabled:cursor-not-allowed disabled:opacity-40 ${
         danger ? "text-red-600 hover:bg-red-50" : "text-gray-700 hover:bg-gray-50"
       }`}
     >
-      {icon}
       {children}
     </button>
   );
@@ -112,6 +103,9 @@ export function NodeFrame({
   children: ReactNode;
   width?: number;
 }) {
+  const locked = useCanvasStore((s) =>
+    menuNodeId ? s.nodes.find((n) => n.id === menuNodeId)?.draggable === false : false,
+  );
   const ring = running
     ? "border-brand shadow-[0_0_0_3px_rgba(96,88,232,0.35)] animate-pulse"
     : selected
@@ -119,7 +113,10 @@ export function NodeFrame({
       : "border-gray-200";
 
   return (
-    <div className={`rounded-xl border bg-white shadow-sm ${ring}`} style={{ width }}>
+    <div
+      className={`rounded-xl border bg-white shadow-sm ${ring} ${locked ? "opacity-60" : ""}`}
+      style={{ width }}
+    >
       <div className="flex items-center gap-1.5 border-b border-gray-100 px-3 py-2.5">
         <span className="truncate text-sm font-semibold text-gray-800">{title}</span>
         {info && <InfoHint text={info} />}
@@ -143,7 +140,7 @@ export function NodeFrame({
             </button>
           </>
         )}
-        {menuNodeId && <NodeMenu nodeId={menuNodeId} />}
+        {menuNodeId && <NodeMenu nodeId={menuNodeId} locked={locked} />}
       </div>
       <div className="p-3">{children}</div>
     </div>
