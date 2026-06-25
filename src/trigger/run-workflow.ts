@@ -151,9 +151,16 @@ export const runWorkflowTask = task({
           return { response: text };
         }
         case "response": {
-          const result = resolveInput(node.id, "result", null);
-          if (typeof result === "string") state[node.id] = { ...state[node.id], text: result };
-          return { result };
+          const incoming = edges.filter((e) => e.target === node.id && e.targetHandle === "result");
+          const collected: Record<string, unknown> = {};
+          for (const e of incoming) {
+            collected[e.source] = outputs[e.source]?.[e.sourceHandle ?? "default"];
+          }
+          const text = Object.values(collected)
+            .filter((v): v is string => typeof v === "string" && !v.startsWith("data:"))
+            .join("\n\n");
+          if (text) state[node.id] = { ...state[node.id], text };
+          return collected;
         }
         default:
           return {};

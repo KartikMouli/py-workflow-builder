@@ -2,14 +2,35 @@
 
 import type { NodeProps } from "@xyflow/react";
 import { LogIn } from "lucide-react";
+import { useMemo } from "react";
 import { useCanvasStore } from "../store";
 import type { ResponseNode } from "../types";
 import { NodeFrame, RowHandle } from "./node-frame";
 
+const BASE_NAME: Record<string, string> = {
+  gemini: "gemini_3_flash",
+  "crop-image": "crop_image",
+  "request-inputs": "request_inputs",
+};
+
 export function ResponseNodeView({ id, selected }: NodeProps<ResponseNode>) {
   const runState = useCanvasStore((s) => s.runStates[id]);
-  const result = useCanvasStore((s) => s.outputs[id]?.result);
-  const text = runState?.text ?? (typeof result === "string" ? result : undefined);
+  const edges = useCanvasStore((s) => s.edges);
+  const nodes = useCanvasStore((s) => s.nodes);
+  const runStates = useCanvasStore((s) => s.runStates);
+  const outputs = useCanvasStore((s) => s.outputs);
+
+  const collectors = useMemo(() => {
+    const incoming = edges.filter((e) => e.target === id && e.targetHandle === "result");
+    const counts: Record<string, number> = {};
+    return incoming.map((e) => {
+      const base = BASE_NAME[nodes.find((n) => n.id === e.source)?.type ?? ""] ?? "input";
+      counts[base] = (counts[base] ?? 0) + 1;
+      const name = counts[base] === 1 ? base : `${base}_${counts[base]}`;
+      const value = runStates[e.source]?.text ?? outputs[e.source]?.[e.sourceHandle ?? "default"];
+      return { key: e.id, name, value };
+    });
+  }, [edges, nodes, id, runStates, outputs]);
 
   return (
     <NodeFrame
@@ -21,16 +42,38 @@ export function ResponseNodeView({ id, selected }: NodeProps<ResponseNode>) {
       <div className="relative">
         <span className="text-xs font-medium text-gray-600">result</span>
         <RowHandle side="left" kind="target" id="result" dataType="any" />
-        {text ? (
-          <div className="nodrag mt-2 max-h-40 overflow-auto whitespace-pre-wrap rounded-md bg-gray-50 px-2 py-2 text-xs text-gray-700">
-            {text}
-          </div>
-        ) : (
-          <div className="mt-2 rounded-md bg-gray-50 px-2 py-3 text-center text-xs text-gray-400">
-            {runState?.error ?? (runState?.status === "RUNNING" ? "Collecting…" : "No output yet")}
-          </div>
-        )}
+        <div className="mt-2 space-y-2">
+          {collectors.length === 0 ? (
+            <div className="rounded-md bg-gray-50 px-2 py-3 text-center text-xs text-gray-400">
+              No output yet
+            </div>
+          ) : (
+            collectors.map((c) => <Collector key={c.key} name={c.name} value={c.value} />)
+          )}
+        </div>
       </div>
     </NodeFrame>
+  );
+}
+
+function Collector({ name, value }: { name: string; value: unknown }) {
+  const isImage = typeof value === "string" && value.startsWith("data:");
+  const text = typeof value === "string" && !isImage ? value : undefined;
+  return (
+    <div className="rounded-lg border border-gray-100 p-2">
+      <div className="mb-1 text-xs font-medium text-gray-700">{name}</div>
+      {isImage ? (
+        <div
+          className="h-20 w-full rounded bg-gray-50 bg-contain bg-center bg-no-repeat"
+          style={{ backgroundImage: `url("${value}")` }}
+        />
+      ) : text ? (
+        <div className="nodrag max-h-28 overflow-auto whitespace-pre-wrap text-xs text-gray-700">
+          {text}
+        </div>
+      ) : (
+        <div className="py-2 text-center text-xs text-gray-400">No output yet</div>
+      )}
+    </div>
   );
 }

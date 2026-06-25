@@ -8,7 +8,7 @@ import {
 } from "@xyflow/react";
 import { useMemo } from "react";
 import { create } from "zustand";
-import { isValidConnection as checkConnection, withEdgeStyle } from "./graph";
+import { allowsMultipleInputs, isValidConnection as checkConnection, withEdgeStyle } from "./graph";
 import type { AppEdge, AppNode } from "./types";
 
 type Snapshot = { nodes: AppNode[]; edges: AppEdge[] };
@@ -76,10 +76,13 @@ export const useCanvasStore = create<CanvasState>((set, get) => {
     onConnect: (connection) => {
       if (!checkConnection(connection, get().nodes, get().edges)) return;
       commit();
-      const withoutOld = get().edges.filter(
-        (e) => !(e.target === connection.target && e.targetHandle === connection.targetHandle),
-      );
-      const next = addEdge({ ...connection, animated: true }, withoutOld);
+      const targetNode = get().nodes.find((n) => n.id === connection.target);
+      const base = allowsMultipleInputs(targetNode)
+        ? get().edges
+        : get().edges.filter(
+            (e) => !(e.target === connection.target && e.targetHandle === connection.targetHandle),
+          );
+      const next = addEdge({ ...connection, animated: true }, base);
       set({ edges: next.map((e) => withEdgeStyle(e, get().nodes)) });
     },
 

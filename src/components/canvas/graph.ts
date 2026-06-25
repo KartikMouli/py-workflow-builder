@@ -63,6 +63,11 @@ export function isValidConnection(
   return !wouldCreateCycle(source, target, nodes, edges);
 }
 
+// The Response node's `result` is a collector — it accepts many incoming edges.
+export function allowsMultipleInputs(node: AppNode | undefined): boolean {
+  return node?.type === "response";
+}
+
 export function withEdgeStyle(edge: AppEdge, nodes: AppNode[]): AppEdge {
   const sourceNode = nodes.find((n) => n.id === edge.source);
   const type = sourceNode ? handleDataType(sourceNode, edge.sourceHandle) : "any";
