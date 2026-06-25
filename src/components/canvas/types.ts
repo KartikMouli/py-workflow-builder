@@ -45,7 +45,14 @@ export type GeminiData = {
 
 export type ResponseData = Record<string, never>;
 
-export type StickyNoteData = { text: string };
+export type StickyColor = "yellow" | "blue" | "green" | "pink" | "purple" | "orange";
+export type StickyNoteData = {
+  text: string;
+  color?: StickyColor;
+  bold?: boolean;
+  fontSize?: number;
+  fontFamily?: "sans" | "serif" | "mono";
+};
 
 export type RequestInputsNode = Node<RequestInputsData, "request-inputs">;
 export type CropImageNode = Node<CropImageData, "crop-image">;
@@ -131,5 +138,10 @@ export function createGeminiNode(position: { x: number; y: number }): GeminiNode
 }
 
 export function createStickyNote(position: { x: number; y: number }): StickyNoteNode {
-  return { id: genId("sticky"), type: "sticky-note", position, data: { text: "" } };
+  return {
+    id: genId("sticky"),
+    type: "sticky-note",
+    position,
+    data: { text: "", color: "yellow", fontSize: 14, fontFamily: "sans" },
+  };
 }
