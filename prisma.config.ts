@@ -1,10 +1,18 @@
-// Prisma 7 moves the datasource connection URL out of schema.prisma into this file.
-// Load .env.local first (Next.js convention), then .env as a fallback, before reading vars.
 import { config as loadEnv } from "dotenv";
 
 loadEnv({ path: [".env.local", ".env"] });
 
 import { defineConfig } from "prisma/config";
+
+// Migrations need a direct (non-pooled) Neon connection; derive it from DATABASE_URL when
+// DIRECT_URL isn't a real URL. The runtime app uses the pooled DATABASE_URL via the pg adapter.
+function migrationUrl(): string {
+  const direct = process.env.DIRECT_URL;
+  if (direct && /^postgres(ql)?:\/\//.test(direct) && !direct.includes("USER:PASSWORD")) {
+    return direct;
+  }
+  return (process.env.DATABASE_URL ?? "").replace("-pooler", "");
+}
 
 export default defineConfig({
   schema: "prisma/schema.prisma",
@@ -12,7 +20,6 @@ export default defineConfig({
     path: "prisma/migrations",
   },
   datasource: {
-    // process.env (not the throwing env() helper) so `prisma generate` works before keys exist.
-    url: process.env.DATABASE_URL ?? "",
+    url: migrationUrl(),
   },
 });
