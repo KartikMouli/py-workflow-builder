@@ -27,7 +27,7 @@ function NodeMenu({ nodeId, locked }: { nodeId: string; locked: boolean }) {
   };
 
   return (
-    <div className="relative">
+    <div className="relative z-20">
       <button
         type="button"
         aria-label="Node options"
@@ -113,10 +113,10 @@ export function NodeFrame({
       : "border-gray-200";
 
   return (
-    <div
-      className={`rounded-xl border bg-white shadow-sm ${ring} ${locked ? "opacity-60" : ""}`}
-      style={{ width }}
-    >
+    <div className={`relative rounded-xl border bg-white shadow-sm ${ring}`} style={{ width }}>
+      {locked && (
+        <div className="absolute inset-0 z-10 cursor-not-allowed rounded-xl bg-gray-200/55" />
+      )}
       <div className="flex items-center gap-1.5 border-b border-gray-100 px-3 py-2.5">
         <span className="truncate text-sm font-semibold text-gray-800">{title}</span>
         {info && <InfoHint text={info} />}
