@@ -41,13 +41,35 @@ export function WorkflowCanvas({
   const onNodesChange = useCanvasStore((s) => s.onNodesChange);
   const onEdgesChange = useCanvasStore((s) => s.onEdgesChange);
   const onConnect = useCanvasStore((s) => s.onConnect);
+  const isValidConnection = useCanvasStore((s) => s.isValidConnection);
   const setGraph = useCanvasStore((s) => s.setGraph);
+  const undo = useCanvasStore((s) => s.undo);
+  const redo = useCanvasStore((s) => s.redo);
 
   useEffect(() => {
     const seeded =
       initialGraph.nodes.length > 0 ? initialGraph.nodes : createPrePlacedNodes();
     setGraph(seeded, initialGraph.edges);
   }, [initialGraph, setGraph]);
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      const target = e.target as HTMLElement | null;
+      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable))
+        return;
+      const mod = e.ctrlKey || e.metaKey;
+      if (mod && e.key.toLowerCase() === "z") {
+        e.preventDefault();
+        if (e.shiftKey) redo();
+        else undo();
+      } else if (mod && e.key.toLowerCase() === "y") {
+        e.preventDefault();
+        redo();
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [undo, redo]);
 
   useEffect(() => {
     if (nodes.length === 0) return;
@@ -84,6 +106,8 @@ export function WorkflowCanvas({
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
+          isValidConnection={isValidConnection}
+          deleteKeyCode={["Backspace", "Delete"]}
           nodeTypes={nodeTypes}
           fitView
           proOptions={{ hideAttribution: true }}
