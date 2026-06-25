@@ -13,7 +13,7 @@ const ITEMS: {
   create: (p: { x: number; y: number }) => AppNode;
 }[] = [
   { key: "crop-image", label: "Crop Image", category: "Image", create: createCropImageNode },
-  { key: "gemini", label: "Gemini 3.1 Pro", category: "LLM", create: createGeminiNode },
+  { key: "gemini", label: "Gemini 3 Flash", category: "LLM", create: createGeminiNode },
 ];
 
 export function NodePicker() {

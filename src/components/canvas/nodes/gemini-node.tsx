@@ -25,7 +25,7 @@ export function GeminiNodeView({ id, data, selected }: NodeProps<GeminiNode>) {
 
   return (
     <NodeFrame
-      title="Gemini 3.1 Pro"
+      title="Gemini 3 Flash"
       selected={selected}
       showRun
       width={300}

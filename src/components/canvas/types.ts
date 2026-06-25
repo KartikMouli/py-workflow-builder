@@ -118,6 +118,6 @@ export function createGeminiNode(position: { x: number; y: number }): GeminiNode
     id: genId("gemini"),
     type: "gemini",
     position,
-    data: { model: "gemini-3.1-pro", settings: { temperature: 1, maxOutputTokens: 2048 } },
+    data: { model: "gemini-3-flash-preview", settings: { temperature: 1, maxOutputTokens: 2048 } },
   };
 }

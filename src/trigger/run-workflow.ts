@@ -86,7 +86,7 @@ async function runGemini(
   if (!key) throw new Error("Missing GOOGLE_GENERATIVE_AI_API_KEY");
   const client = new GoogleGenerativeAI(key);
   const generative = client.getGenerativeModel({
-    model: process.env.GEMINI_MODEL ?? model,
+    model,
     ...(systemPrompt ? { systemInstruction: systemPrompt } : {}),
   });
   const parts: Array<{ text: string } | { inlineData: { mimeType: string; data: string } }> = [
@@ -141,7 +141,12 @@ export const runWorkflowTask = task({
             | string
             | undefined;
           const image = resolveInput(node.id, "image", data.imageUrl) as string | undefined;
-          const text = await runGemini((data.model as string) ?? "gemini-3.1-pro", prompt, system, image);
+          const text = await runGemini(
+            (data.model as string) ?? "gemini-3-flash-preview",
+            prompt,
+            system,
+            image,
+          );
           state[node.id] = { ...state[node.id], text };
           return { response: text };
         }
