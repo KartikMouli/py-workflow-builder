@@ -13,6 +13,7 @@ import {
 import { Check, Loader2, TriangleAlert } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CanvasTopBar } from "./canvas-top-bar";
+import { serializeGraph } from "./graph";
 import { NodePicker } from "./node-picker";
 import { CropImageNodeView } from "./nodes/crop-image-node";
 import { GeminiNodeView } from "./nodes/gemini-node";
@@ -30,27 +31,6 @@ const nodeTypes = {
   response: ResponseNodeView,
   "sticky-note": StickyNoteNodeView,
 } as NodeTypes;
-
-function serializeGraph(nodes: AppNode[], edges: AppEdge[]) {
-  return {
-    nodes: nodes.map((n) => ({
-      id: n.id,
-      type: n.type,
-      position: n.position,
-      data: n.data,
-      ...(n.deletable === false ? { deletable: false } : {}),
-      ...(n.draggable === false ? { draggable: false } : {}),
-      ...(n.connectable === false ? { connectable: false } : {}),
-    })),
-    edges: edges.map((e) => ({
-      id: e.id,
-      source: e.source,
-      target: e.target,
-      sourceHandle: e.sourceHandle ?? null,
-      targetHandle: e.targetHandle ?? null,
-    })),
-  };
-}
 
 export function WorkflowCanvas({
   workflowId,
@@ -71,7 +51,8 @@ export function WorkflowCanvas({
   const undo = useCanvasStore((s) => s.undo);
   const redo = useCanvasStore((s) => s.redo);
   const liveRun = useCanvasStore((s) => s.liveRun);
-  const startLiveRun = useCanvasStore((s) => s.startLiveRun);
+  const runWorkflow = useCanvasStore((s) => s.runWorkflow);
+  const setWorkflowId = useCanvasStore((s) => s.setWorkflowId);
   const clearLiveRun = useCanvasStore((s) => s.clearLiveRun);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const pendingBody = useRef<string | null>(null);
@@ -81,17 +62,7 @@ export function WorkflowCanvas({
     [edges, liveRun],
   );
 
-  const startRun = useCallback(async () => {
-    const { nodes: n, edges: e } = useCanvasStore.getState();
-    const res = await fetch(`/api/workflows/${workflowId}/runs`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ scope: "FULL", graph: serializeGraph(n, e) }),
-    });
-    if (!res.ok) return;
-    const { dbRunId, triggerRunId, publicAccessToken } = await res.json();
-    startLiveRun({ dbRunId, triggerRunId, token: publicAccessToken });
-  }, [workflowId, startLiveRun]);
+  const startRun = useCallback(() => runWorkflow("FULL"), [runWorkflow]);
 
   const stopRun = useCallback(async () => {
     const current = useCanvasStore.getState().liveRun;
@@ -100,10 +71,11 @@ export function WorkflowCanvas({
   }, [clearLiveRun]);
 
   useEffect(() => {
+    setWorkflowId(workflowId);
     const seeded =
       initialGraph.nodes.length > 0 ? initialGraph.nodes : createPrePlacedNodes();
     setGraph(seeded, initialGraph.edges);
-  }, [initialGraph, setGraph]);
+  }, [initialGraph, setGraph, setWorkflowId, workflowId]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -216,6 +188,7 @@ export function WorkflowCanvas({
           onStop={stopRun}
         />
         <NodePicker />
+        <CanvasToast />
         {liveRun && (
           <RunSubscriber
             triggerRunId={liveRun.triggerRunId}
@@ -225,5 +198,27 @@ export function WorkflowCanvas({
         )}
       </div>
     </ReactFlowProvider>
+  );
+}
+
+function CanvasToast() {
+  const toast = useCanvasStore((s) => s.toast);
+  const dismissToast = useCanvasStore((s) => s.dismissToast);
+
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(dismissToast, 4000);
+    return () => clearTimeout(t);
+  }, [toast, dismissToast]);
+
+  if (!toast) return null;
+  return (
+    <button
+      type="button"
+      onClick={dismissToast}
+      className="absolute bottom-20 left-6 z-20 max-w-sm rounded-lg border border-gray-200 bg-white px-4 py-3 text-left text-sm text-gray-800 shadow-lg"
+    >
+      {toast}
+    </button>
   );
 }

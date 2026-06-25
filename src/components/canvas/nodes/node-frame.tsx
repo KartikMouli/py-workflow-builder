@@ -106,6 +106,7 @@ export function NodeFrame({
   const locked = useCanvasStore((s) =>
     menuNodeId ? s.nodes.find((n) => n.id === menuNodeId)?.draggable === false : false,
   );
+  const runWorkflow = useCanvasStore((s) => s.runWorkflow);
   const ring = running
     ? "border-brand shadow-[0_0_0_3px_rgba(96,88,232,0.35)] animate-pulse"
     : selected
@@ -134,6 +135,7 @@ export function NodeFrame({
             <button
               type="button"
               disabled={locked}
+              onClick={() => menuNodeId && runWorkflow("SINGLE", [menuNodeId])}
               className={
                 locked
                   ? "nodrag flex items-center gap-1.5 rounded-md border border-amber-500/30 bg-amber-500/20 px-3 py-1.5 text-xs font-medium text-amber-400 opacity-60 transition-all cursor-not-allowed"
