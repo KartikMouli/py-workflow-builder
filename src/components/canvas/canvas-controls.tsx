@@ -136,7 +136,7 @@ export function CanvasMinimap() {
         type="button"
         aria-label="Hide minimap"
         onClick={() => setOpen(false)}
-        className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 shadow-md hover:bg-gray-50"
+        className="absolute right-2 top-2 z-20 flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 shadow-md hover:bg-gray-50"
       >
         <Minimize2 className="h-4 w-4" />
       </button>
