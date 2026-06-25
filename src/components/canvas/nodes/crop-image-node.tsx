@@ -4,6 +4,7 @@ import type { NodeProps } from "@xyflow/react";
 import { Crop } from "lucide-react";
 import { useCanvasStore, useConnectedTargets } from "../store";
 import type { CropImageNode } from "../types";
+import { ImageUploadButton } from "./image-upload-button";
 import { NodeFrame, RowHandle } from "./node-frame";
 
 const PARAMS: { key: "x" | "y" | "width" | "height"; label: string }[] = [
@@ -24,13 +25,11 @@ export function CropImageNodeView({ id, data, selected }: NodeProps<CropImageNod
           <label className="mb-1 block text-xs font-medium text-gray-600">
             Input Image <span className="text-red-500">*</span>
           </label>
-          <button
-            type="button"
+          <ImageUploadButton
+            value={data.inputImageUrl}
             disabled={connected.has("input-image")}
-            className="nodrag w-full rounded-md border border-dashed border-gray-300 py-3 text-xs text-gray-400 hover:bg-gray-100 disabled:opacity-50 disabled:hover:bg-transparent"
-          >
-            {connected.has("input-image") ? "Connected" : "Upload image"}
-          </button>
+            onChange={(url) => updateNodeData(id, { inputImageUrl: url })}
+          />
           <RowHandle side="left" kind="target" id="input-image" dataType="image" />
         </div>
 

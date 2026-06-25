@@ -5,6 +5,7 @@ import { Copy, GripVertical, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useCanvasStore } from "../store";
 import { type FieldType, type InputField, type RequestInputsNode, fieldDataType } from "../types";
+import { ImageUploadButton } from "./image-upload-button";
 import { NodeFrame, RowHandle } from "./node-frame";
 
 const FIELD_TYPES: { type: FieldType; label: string }[] = [
@@ -87,12 +88,12 @@ export function RequestInputsNodeView({ id, data, selected }: NodeProps<RequestI
               </button>
             </div>
             {f.type === "image" || f.type === "media" ? (
-              <button
-                type="button"
-                className="nodrag w-full rounded-md border border-dashed border-gray-300 py-3 text-xs text-gray-400 hover:bg-gray-100"
-              >
-                Upload image
-              </button>
+              <ImageUploadButton
+                value={f.value}
+                onChange={(url) =>
+                  setFields(fields.map((x) => (x.id === f.id ? { ...x, value: url } : x)))
+                }
+              />
             ) : (
               <textarea
                 value={f.value ?? ""}

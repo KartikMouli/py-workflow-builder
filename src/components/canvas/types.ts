@@ -38,6 +38,7 @@ export type GeminiData = {
   model: string;
   prompt?: string;
   systemPrompt?: string;
+  imageUrl?: string;
   settings: GeminiSettings;
   response?: string;
 };

@@ -5,6 +5,7 @@ import { ChevronDown, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { useCanvasStore, useConnectedTargets } from "../store";
 import type { DataType, GeminiNode } from "../types";
+import { ImageUploadButton } from "./image-upload-button";
 import { NodeFrame, RowHandle } from "./node-frame";
 
 const UPLOAD_INPUTS: { id: string; label: string; type: DataType }[] = [
@@ -59,13 +60,22 @@ export function GeminiNodeView({ id, data, selected }: NodeProps<GeminiNode>) {
         {UPLOAD_INPUTS.map((inp) => (
           <div key={inp.id} className="relative">
             <label className="mb-1 block text-xs font-medium text-gray-600">{inp.label}</label>
-            <button
-              type="button"
-              disabled={connected.has(inp.id)}
-              className="nodrag w-full rounded-md border border-dashed border-gray-300 py-2 text-xs text-gray-400 hover:bg-gray-100 disabled:opacity-50 disabled:hover:bg-transparent"
-            >
-              {connected.has(inp.id) ? "Connected" : `Upload ${inp.label.toLowerCase()}`}
-            </button>
+            {inp.id === "image" ? (
+              <ImageUploadButton
+                value={data.imageUrl}
+                disabled={connected.has(inp.id)}
+                label={`Upload ${inp.label.toLowerCase()}`}
+                onChange={(url) => updateNodeData(id, { imageUrl: url })}
+              />
+            ) : (
+              <button
+                type="button"
+                disabled={connected.has(inp.id)}
+                className="nodrag w-full rounded-md border border-dashed border-gray-300 py-2 text-xs text-gray-400 hover:bg-gray-100 disabled:opacity-50 disabled:hover:bg-transparent"
+              >
+                {connected.has(inp.id) ? "Connected" : `Upload ${inp.label.toLowerCase()}`}
+              </button>
+            )}
             <RowHandle side="left" kind="target" id={inp.id} dataType={inp.type} />
           </div>
         ))}
