@@ -115,7 +115,7 @@ export function NodeFrame({
   return (
     <div className={`relative rounded-xl border bg-white shadow-sm ${ring}`} style={{ width }}>
       {locked && (
-        <div className="absolute inset-0 z-10 cursor-not-allowed rounded-xl bg-gray-200/55" />
+        <div className="absolute inset-0 z-10 cursor-not-allowed rounded-xl bg-gray-200/20" />
       )}
       <div className="flex items-center gap-1.5 border-b border-gray-100 px-3 py-2.5">
         <span className="truncate text-sm font-semibold text-gray-800">{title}</span>
@@ -133,7 +133,12 @@ export function NodeFrame({
             </button>
             <button
               type="button"
-              className="nodrag flex items-center gap-1 rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 hover:bg-green-100"
+              disabled={locked}
+              className={
+                locked
+                  ? "nodrag flex items-center gap-1.5 rounded-md border border-amber-500/30 bg-amber-500/20 px-3 py-1.5 text-xs font-medium text-amber-400 opacity-60 transition-all cursor-not-allowed"
+                  : "nodrag flex items-center gap-1.5 rounded-md border border-green-500/30 bg-green-500/20 px-3 py-1.5 text-xs font-medium text-green-500 transition-all hover:bg-green-500/30"
+              }
             >
               <Play className="h-3 w-3" />
               Run
