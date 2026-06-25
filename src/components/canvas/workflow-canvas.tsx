@@ -10,7 +10,7 @@ import {
   ReactFlow,
   ReactFlowProvider,
 } from "@xyflow/react";
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { CanvasTopBar } from "./canvas-top-bar";
 import { NodePicker } from "./node-picker";
 import { CropImageNodeView } from "./nodes/crop-image-node";
@@ -68,6 +68,11 @@ export function WorkflowCanvas({
   const liveRun = useCanvasStore((s) => s.liveRun);
   const startLiveRun = useCanvasStore((s) => s.startLiveRun);
   const clearLiveRun = useCanvasStore((s) => s.clearLiveRun);
+
+  const displayEdges = useMemo(
+    () => (liveRun ? edges.map((e) => ({ ...e, animated: true })) : edges),
+    [edges, liveRun],
+  );
 
   const startRun = useCallback(async () => {
     const { nodes: n, edges: e } = useCanvasStore.getState();
@@ -129,7 +134,7 @@ export function WorkflowCanvas({
       <div className="relative h-full bg-canvas">
         <ReactFlow
           nodes={nodes}
-          edges={edges}
+          edges={displayEdges}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
@@ -138,7 +143,6 @@ export function WorkflowCanvas({
           nodeTypes={nodeTypes}
           fitView
           proOptions={{ hideAttribution: true }}
-          defaultEdgeOptions={{ animated: true }}
         >
           <Background variant={BackgroundVariant.Dots} gap={20} size={1.5} color="#d4d4d8" />
           <MiniMap pannable zoomable />

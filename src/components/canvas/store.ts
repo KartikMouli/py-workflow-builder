@@ -82,7 +82,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => {
         : get().edges.filter(
             (e) => !(e.target === connection.target && e.targetHandle === connection.targetHandle),
           );
-      const next = addEdge({ ...connection, animated: true }, base);
+      const next = addEdge({ ...connection }, base);
       set({ edges: next.map((e) => withEdgeStyle(e, get().nodes)) });
     },
 

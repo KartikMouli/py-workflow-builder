@@ -69,14 +69,15 @@ export function RowHandle({
   const style: CSSProperties = {
     top: "50%",
     transform: "translateY(-50%)",
-    width: 11,
-    height: 11,
+    width: 14,
+    height: 14,
     borderRadius: 9999,
     background: TYPE_COLOR[dataType],
     border: "2px solid #fff",
+    boxShadow: "0 1px 2px rgba(0,0,0,0.15)",
   };
-  if (side === "left") style.left = -12;
-  else style.right = -12;
+  if (side === "left") style.left = -13;
+  else style.right = -13;
 
   return (
     <Handle

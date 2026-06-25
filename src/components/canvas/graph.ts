@@ -71,5 +71,9 @@ export function allowsMultipleInputs(node: AppNode | undefined): boolean {
 export function withEdgeStyle(edge: AppEdge, nodes: AppNode[]): AppEdge {
   const sourceNode = nodes.find((n) => n.id === edge.source);
   const type = sourceNode ? handleDataType(sourceNode, edge.sourceHandle) : "any";
-  return { ...edge, animated: true, style: { ...edge.style, stroke: TYPE_COLOR[type], strokeWidth: 2 } };
+  return {
+    ...edge,
+    animated: false,
+    style: { ...edge.style, stroke: TYPE_COLOR[type], strokeWidth: 2.5 },
+  };
 }
