@@ -17,7 +17,18 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
+
+function RailTip({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="group relative flex">
+      {children}
+      <span className="pointer-events-none absolute left-full top-1/2 z-50 ml-2 hidden -translate-y-1/2 whitespace-nowrap rounded-md bg-gray-900 px-2 py-1 text-[11px] text-white shadow-lg group-hover:block">
+        {label}
+      </span>
+    </div>
+  );
+}
 
 const NAV: { label: string; icon: typeof Plus; href: string | null }[] = [
   { label: "New task", icon: Plus, href: null },
@@ -51,32 +62,38 @@ export function AppSidebar() {
             const cls = `flex h-9 w-9 items-center justify-center rounded-lg ${
               active ? "bg-[#dadada] text-gray-900" : "text-gray-600 hover:bg-[#e6e6e6]"
             }`;
-            return href ? (
-              <Link key={label} href={href} title={label} className={cls}>
-                <Icon className="h-4 w-4" />
-              </Link>
-            ) : (
-              <button key={label} type="button" title={label} className={`${cls} cursor-default`}>
-                <Icon className="h-4 w-4" />
-              </button>
+            return (
+              <RailTip key={label} label={label}>
+                {href ? (
+                  <Link href={href} className={cls}>
+                    <Icon className="h-4 w-4" />
+                  </Link>
+                ) : (
+                  <button type="button" className={`${cls} cursor-default`}>
+                    <Icon className="h-4 w-4" />
+                  </button>
+                )}
+              </RailTip>
             );
           })}
         </nav>
         <div className="flex flex-col items-center gap-2">
-          <button
-            type="button"
-            title="Settings"
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-600 hover:bg-[#e6e6e6]"
-          >
-            <Settings className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            title="Claim Offer"
-            className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand text-white hover:bg-brand-hover"
-          >
-            <Gift className="h-4 w-4" />
-          </button>
+          <RailTip label="Settings">
+            <button
+              type="button"
+              className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-600 hover:bg-[#e6e6e6]"
+            >
+              <Settings className="h-4 w-4" />
+            </button>
+          </RailTip>
+          <RailTip label="Claim Offer">
+            <button
+              type="button"
+              className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand text-white hover:bg-brand-hover"
+            >
+              <Gift className="h-4 w-4" />
+            </button>
+          </RailTip>
           <UserButton />
         </div>
       </aside>
