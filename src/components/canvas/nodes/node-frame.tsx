@@ -3,9 +3,20 @@ import { Info, MoreHorizontal, Play } from "lucide-react";
 import type { CSSProperties, ReactNode } from "react";
 import { type DataType, TYPE_COLOR } from "../types";
 
+export function InfoHint({ text }: { text: string }) {
+  return (
+    <span className="nodrag group/info relative inline-flex items-center">
+      <Info className="h-3.5 w-3.5 cursor-help text-gray-300 hover:text-gray-500" />
+      <span className="pointer-events-none absolute left-1/2 top-5 z-50 hidden w-48 -translate-x-1/2 rounded-md bg-gray-900 px-2 py-1.5 text-[11px] font-normal leading-snug text-white shadow-lg group-hover/info:block">
+        {text}
+      </span>
+    </span>
+  );
+}
+
 export function NodeFrame({
   title,
-  icon,
+  info,
   selected,
   running,
   showRun,
@@ -14,7 +25,7 @@ export function NodeFrame({
   width = 264,
 }: {
   title: string;
-  icon: ReactNode;
+  info?: string;
   selected?: boolean;
   running?: boolean;
   showRun?: boolean;
@@ -30,12 +41,10 @@ export function NodeFrame({
 
   return (
     <div className={`rounded-xl border bg-white shadow-sm ${ring}`} style={{ width }}>
-      <div className="flex items-center gap-2 border-b border-gray-100 px-3 py-2">
-        <span className="flex h-6 w-6 items-center justify-center rounded-md bg-gray-100 text-gray-600">
-          {icon}
-        </span>
-        <span className="flex-1 truncate text-sm font-semibold text-gray-800">{title}</span>
-        <Info className="h-3.5 w-3.5 text-gray-300" />
+      <div className="flex items-center gap-1.5 border-b border-gray-100 px-3 py-2.5">
+        <span className="truncate text-sm font-semibold text-gray-800">{title}</span>
+        {info && <InfoHint text={info} />}
+        <div className="flex-1" />
         {headerAction}
         {showRun && (
           <button

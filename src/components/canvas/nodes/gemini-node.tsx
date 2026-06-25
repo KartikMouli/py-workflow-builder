@@ -1,7 +1,7 @@
 "use client";
 
 import type { NodeProps } from "@xyflow/react";
-import { ChevronDown, Sparkles } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { useCanvasStore, useConnectedTargets } from "../store";
 import type { DataType, GeminiNode } from "../types";
@@ -26,11 +26,11 @@ export function GeminiNodeView({ id, data, selected }: NodeProps<GeminiNode>) {
   return (
     <NodeFrame
       title="Gemini 3 Flash"
+      info="Generate text with Google's Gemini 3 Flash. Connect a prompt and optional image, video, or audio."
       selected={selected}
       showRun
       width={300}
       running={runState?.status === "RUNNING"}
-      icon={<Sparkles className="h-3.5 w-3.5" />}
     >
       <div className="space-y-3">
         <div className="relative">
@@ -41,9 +41,9 @@ export function GeminiNodeView({ id, data, selected }: NodeProps<GeminiNode>) {
             value={data.prompt ?? ""}
             disabled={connected.has("prompt")}
             onChange={(e) => updateNodeData(id, { prompt: e.target.value })}
-            placeholder={connected.has("prompt") ? "Connected" : "Enter prompt..."}
-            rows={2}
-            className="nodrag w-full resize-none rounded-md border border-gray-200 px-2 py-1.5 text-xs outline-none focus:border-brand/40 disabled:opacity-50"
+            placeholder={connected.has("prompt") ? "Connected" : "Enter your prompt..."}
+            rows={3}
+            className="nodrag w-full resize-y rounded-md border border-gray-200 px-2 py-1.5 text-xs outline-none focus:border-brand/40 disabled:opacity-50"
           />
           <RowHandle side="left" kind="target" id="prompt" dataType="text" />
         </div>
@@ -55,8 +55,8 @@ export function GeminiNodeView({ id, data, selected }: NodeProps<GeminiNode>) {
             disabled={connected.has("system-prompt")}
             onChange={(e) => updateNodeData(id, { systemPrompt: e.target.value })}
             placeholder={connected.has("system-prompt") ? "Connected" : "Optional system prompt..."}
-            rows={2}
-            className="nodrag w-full resize-none rounded-md border border-gray-200 px-2 py-1.5 text-xs outline-none focus:border-brand/40 disabled:opacity-50"
+            rows={3}
+            className="nodrag w-full resize-y rounded-md border border-gray-200 px-2 py-1.5 text-xs outline-none focus:border-brand/40 disabled:opacity-50"
           />
           <RowHandle side="left" kind="target" id="system-prompt" dataType="text" />
         </div>

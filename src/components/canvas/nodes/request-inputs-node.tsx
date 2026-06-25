@@ -37,9 +37,9 @@ export function RequestInputsNodeView({ id, data, selected }: NodeProps<RequestI
   return (
     <NodeFrame
       title="Request-Inputs"
+      info="Define the inputs your workflow accepts. Each field becomes an output you can connect."
       selected={selected}
       running={runState?.status === "RUNNING"}
-      icon={<span className="text-[13px] leading-none">⌗</span>}
       headerAction={
         <div className="relative">
           <button
@@ -103,8 +103,8 @@ export function RequestInputsNodeView({ id, data, selected }: NodeProps<RequestI
                   setFields(fields.map((x) => (x.id === f.id ? { ...x, value: e.target.value } : x)))
                 }
                 placeholder="Enter text..."
-                rows={2}
-                className="nodrag w-full resize-none rounded-md border border-gray-200 bg-white px-2 py-1.5 text-xs outline-none focus:border-brand/40"
+                rows={3}
+                className="nodrag w-full resize-y rounded-md border border-gray-200 bg-white px-2 py-1.5 text-xs outline-none focus:border-brand/40"
               />
             )}
             <RowHandle side="right" kind="source" id={f.id} dataType={fieldDataType(f.type)} />

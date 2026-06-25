@@ -1,7 +1,6 @@
 "use client";
 
 import type { NodeProps } from "@xyflow/react";
-import { Crop } from "lucide-react";
 import { useCanvasStore, useConnectedTargets } from "../store";
 import type { CropImageNode } from "../types";
 import { ImageUploadButton } from "./image-upload-button";
@@ -23,10 +22,10 @@ export function CropImageNodeView({ id, data, selected }: NodeProps<CropImageNod
   return (
     <NodeFrame
       title="Crop Image"
+      info="Crop an image to a region set by X/Y position and width/height percentages."
       selected={selected}
       showRun
       running={runState?.status === "RUNNING"}
-      icon={<Crop className="h-3.5 w-3.5" />}
     >
       <div className="space-y-3">
         <div className="relative">
