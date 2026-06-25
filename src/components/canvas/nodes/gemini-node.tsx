@@ -1,0 +1,120 @@
+"use client";
+
+import type { NodeProps } from "@xyflow/react";
+import { ChevronDown, Sparkles } from "lucide-react";
+import { useState } from "react";
+import { useCanvasStore } from "../store";
+import type { DataType, GeminiNode } from "../types";
+import { NodeFrame, RowHandle } from "./node-frame";
+
+const UPLOAD_INPUTS: { id: string; label: string; type: DataType }[] = [
+  { id: "image", label: "Image (Vision)", type: "image" },
+  { id: "video", label: "Video", type: "video" },
+  { id: "audio", label: "Audio", type: "audio" },
+  { id: "file", label: "File", type: "file" },
+];
+
+export function GeminiNodeView({ id, data, selected }: NodeProps<GeminiNode>) {
+  const updateNodeData = useCanvasStore((s) => s.updateNodeData);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+
+  return (
+    <NodeFrame
+      title="Gemini 3.1 Pro"
+      selected={selected}
+      showRun
+      width={300}
+      icon={<Sparkles className="h-3.5 w-3.5" />}
+    >
+      <div className="space-y-3">
+        <div className="relative">
+          <label className="mb-1 block text-xs font-medium text-gray-600">Prompt</label>
+          <textarea
+            value={data.prompt ?? ""}
+            onChange={(e) => updateNodeData(id, { prompt: e.target.value })}
+            placeholder="Enter prompt..."
+            rows={2}
+            className="nodrag w-full resize-none rounded-md border border-gray-200 px-2 py-1.5 text-xs outline-none focus:border-brand/40"
+          />
+          <RowHandle side="left" kind="target" id="prompt" dataType="text" />
+        </div>
+
+        <div className="relative">
+          <label className="mb-1 block text-xs font-medium text-gray-600">System Prompt</label>
+          <textarea
+            value={data.systemPrompt ?? ""}
+            onChange={(e) => updateNodeData(id, { systemPrompt: e.target.value })}
+            placeholder="Optional system prompt..."
+            rows={2}
+            className="nodrag w-full resize-none rounded-md border border-gray-200 px-2 py-1.5 text-xs outline-none focus:border-brand/40"
+          />
+          <RowHandle side="left" kind="target" id="system-prompt" dataType="text" />
+        </div>
+
+        {UPLOAD_INPUTS.map((inp) => (
+          <div key={inp.id} className="relative">
+            <label className="mb-1 block text-xs font-medium text-gray-600">{inp.label}</label>
+            <button
+              type="button"
+              className="nodrag w-full rounded-md border border-dashed border-gray-300 py-2 text-xs text-gray-400 hover:bg-gray-100"
+            >
+              Upload {inp.label.toLowerCase()}
+            </button>
+            <RowHandle side="left" kind="target" id={inp.id} dataType={inp.type} />
+          </div>
+        ))}
+
+        <button
+          type="button"
+          onClick={() => setSettingsOpen((v) => !v)}
+          className="nodrag flex w-full items-center justify-between rounded-md bg-gray-50 px-2 py-1.5 text-xs font-medium text-gray-600"
+        >
+          Settings
+          <ChevronDown className={`h-3.5 w-3.5 transition ${settingsOpen ? "rotate-180" : ""}`} />
+        </button>
+        {settingsOpen && (
+          <div className="space-y-2 rounded-md border border-gray-100 p-2">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-gray-600">Temperature</span>
+              <input
+                type="number"
+                step={0.1}
+                min={0}
+                max={2}
+                value={data.settings.temperature}
+                onChange={(e) =>
+                  updateNodeData(id, {
+                    settings: { ...data.settings, temperature: Number(e.target.value) },
+                  })
+                }
+                className="nodrag w-16 rounded border border-gray-200 px-1.5 py-0.5 text-right outline-none"
+              />
+            </div>
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-gray-600">Max tokens</span>
+              <input
+                type="number"
+                min={1}
+                value={data.settings.maxOutputTokens}
+                onChange={(e) =>
+                  updateNodeData(id, {
+                    settings: { ...data.settings, maxOutputTokens: Number(e.target.value) },
+                  })
+                }
+                className="nodrag w-16 rounded border border-gray-200 px-1.5 py-0.5 text-right outline-none"
+              />
+            </div>
+          </div>
+        )}
+
+        <div className="relative">
+          <label className="mb-1 block text-xs font-medium text-gray-600">Response</label>
+          <div className="rounded-md bg-gray-50 px-2 py-3 text-center text-xs text-gray-400">
+            No output yet
+          </div>
+          <RowHandle side="right" kind="source" id="response" dataType="text" />
+        </div>
+      </div>
+    </NodeFrame>
+  );
+}
