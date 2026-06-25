@@ -77,26 +77,24 @@ export function WorkflowCanvas({
 
   return (
     <ReactFlowProvider>
-      <div className="flex h-full flex-col">
+      <div className="relative h-full bg-canvas">
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          nodeTypes={nodeTypes}
+          fitView
+          proOptions={{ hideAttribution: true }}
+          defaultEdgeOptions={{ animated: true }}
+        >
+          <Background variant={BackgroundVariant.Dots} gap={20} size={1.5} color="#d4d4d8" />
+          <MiniMap pannable zoomable />
+          <Controls />
+        </ReactFlow>
         <CanvasTopBar name={name} />
-        <div className="relative flex-1">
-          <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
-            nodeTypes={nodeTypes}
-            fitView
-            proOptions={{ hideAttribution: true }}
-            defaultEdgeOptions={{ animated: true }}
-          >
-            <Background variant={BackgroundVariant.Dots} gap={20} size={1.5} color="#d4d4d8" />
-            <MiniMap pannable zoomable />
-            <Controls />
-          </ReactFlow>
-          <NodePicker />
-        </div>
+        <NodePicker />
       </div>
     </ReactFlowProvider>
   );
