@@ -18,6 +18,7 @@ import { CropImageNodeView } from "./nodes/crop-image-node";
 import { GeminiNodeView } from "./nodes/gemini-node";
 import { RequestInputsNodeView } from "./nodes/request-inputs-node";
 import { ResponseNodeView } from "./nodes/response-node";
+import { StickyNoteNodeView } from "./nodes/sticky-note-node";
 import { RunSubscriber } from "./run-subscriber";
 import { useCanvasStore } from "./store";
 import { type AppEdge, type AppNode, createPrePlacedNodes } from "./types";
@@ -27,6 +28,7 @@ const nodeTypes = {
   "crop-image": CropImageNodeView,
   gemini: GeminiNodeView,
   response: ResponseNodeView,
+  "sticky-note": StickyNoteNodeView,
 } as NodeTypes;
 
 function serializeGraph(nodes: AppNode[], edges: AppEdge[]) {

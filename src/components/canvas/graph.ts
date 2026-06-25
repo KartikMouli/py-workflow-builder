@@ -24,6 +24,7 @@ export function handleDataType(node: AppNode, handleId: string | null | undefine
           return "text";
       }
     case "response":
+    case "sticky-note":
       return "any";
   }
 }

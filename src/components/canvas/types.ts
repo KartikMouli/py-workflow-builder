@@ -45,11 +45,19 @@ export type GeminiData = {
 
 export type ResponseData = Record<string, never>;
 
+export type StickyNoteData = { text: string };
+
 export type RequestInputsNode = Node<RequestInputsData, "request-inputs">;
 export type CropImageNode = Node<CropImageData, "crop-image">;
 export type GeminiNode = Node<GeminiData, "gemini">;
 export type ResponseNode = Node<ResponseData, "response">;
-export type AppNode = RequestInputsNode | CropImageNode | GeminiNode | ResponseNode;
+export type StickyNoteNode = Node<StickyNoteData, "sticky-note">;
+export type AppNode =
+  | RequestInputsNode
+  | CropImageNode
+  | GeminiNode
+  | ResponseNode
+  | StickyNoteNode;
 export type AppEdge = Edge;
 
 // Handle/edge color by data type (sampled palette: text=orange, image=blue).
@@ -120,4 +128,8 @@ export function createGeminiNode(position: { x: number; y: number }): GeminiNode
     position,
     data: { model: "gemini-3-flash-preview", settings: { temperature: 1, maxOutputTokens: 2048 } },
   };
+}
+
+export function createStickyNote(position: { x: number; y: number }): StickyNoteNode {
+  return { id: genId("sticky"), type: "sticky-note", position, data: { text: "" } };
 }
