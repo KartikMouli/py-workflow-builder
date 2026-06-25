@@ -32,6 +32,9 @@ type CanvasState = {
   isValidConnection: (connection: Connection | AppEdge) => boolean;
   addNode: (node: AppNode) => void;
   updateNodeData: (id: string, patch: Record<string, unknown>) => void;
+  duplicateNode: (id: string, withEdges: boolean) => void;
+  toggleNodeLock: (id: string) => void;
+  removeNode: (id: string) => void;
   setGraph: (nodes: AppNode[], edges: AppEdge[]) => void;
   undo: () => void;
   redo: () => void;
@@ -99,6 +102,54 @@ export const useCanvasStore = create<CanvasState>((set, get) => {
           n.id === id ? ({ ...n, data: { ...n.data, ...patch } } as AppNode) : n,
         ),
       }),
+
+    duplicateNode: (id, withEdges) => {
+      const node = get().nodes.find((n) => n.id === id);
+      if (!node || node.draggable === false) return;
+      commit();
+      const newId = `${node.type}-${crypto.randomUUID().slice(0, 8)}`;
+      const copy = {
+        ...node,
+        id: newId,
+        position: { x: node.position.x + 48, y: node.position.y + 48 },
+        selected: false,
+        data: structuredClone(node.data),
+      } as AppNode;
+      let edges = get().edges;
+      if (withEdges) {
+        const cloned = get()
+          .edges.filter((e) => e.source === id || e.target === id)
+          .map((e) => ({
+            ...e,
+            id: `${e.id}-${crypto.randomUUID().slice(0, 6)}`,
+            source: e.source === id ? newId : e.source,
+            target: e.target === id ? newId : e.target,
+          }));
+        edges = [...edges, ...cloned.map((e) => withEdgeStyle(e, [...get().nodes, copy]))];
+      }
+      set({ nodes: [...get().nodes, copy], edges });
+    },
+
+    toggleNodeLock: (id) =>
+      set({
+        nodes: get().nodes.map((n) => {
+          if (n.id !== id) return n;
+          const locked = n.draggable === false;
+          return locked
+            ? { ...n, draggable: true, connectable: true, deletable: true }
+            : { ...n, draggable: false, connectable: false, deletable: false };
+        }),
+      }),
+
+    removeNode: (id) => {
+      const node = get().nodes.find((n) => n.id === id);
+      if (!node || node.deletable === false) return;
+      commit();
+      set({
+        nodes: get().nodes.filter((n) => n.id !== id),
+        edges: get().edges.filter((e) => e.source !== id && e.target !== id),
+      });
+    },
 
     setGraph: (nodes, edges) =>
       set({ nodes, edges: edges.map((e) => withEdgeStyle(e, nodes)), past: [], future: [] }),
