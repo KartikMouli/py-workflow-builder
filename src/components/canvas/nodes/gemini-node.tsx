@@ -18,7 +18,10 @@ const UPLOAD_INPUTS: { id: string; label: string; type: DataType }[] = [
 export function GeminiNodeView({ id, data, selected }: NodeProps<GeminiNode>) {
   const updateNodeData = useCanvasStore((s) => s.updateNodeData);
   const connected = useConnectedTargets(id);
+  const runState = useCanvasStore((s) => s.runStates[id]);
+  const outputResponse = useCanvasStore((s) => s.outputs[id]?.response) as string | undefined;
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const responseText = runState?.text ?? outputResponse;
 
   return (
     <NodeFrame
@@ -26,6 +29,7 @@ export function GeminiNodeView({ id, data, selected }: NodeProps<GeminiNode>) {
       selected={selected}
       showRun
       width={300}
+      running={runState?.status === "RUNNING"}
       icon={<Sparkles className="h-3.5 w-3.5" />}
     >
       <div className="space-y-3">
@@ -125,9 +129,15 @@ export function GeminiNodeView({ id, data, selected }: NodeProps<GeminiNode>) {
 
         <div className="relative">
           <label className="mb-1 block text-xs font-medium text-gray-600">Response</label>
-          <div className="rounded-md bg-gray-50 px-2 py-3 text-center text-xs text-gray-400">
-            No output yet
-          </div>
+          {responseText ? (
+            <div className="nodrag max-h-32 overflow-auto whitespace-pre-wrap rounded-md bg-gray-50 px-2 py-2 text-xs text-gray-700">
+              {responseText}
+            </div>
+          ) : (
+            <div className="rounded-md bg-gray-50 px-2 py-3 text-center text-xs text-gray-400">
+              {runState?.error ?? (runState?.status === "RUNNING" ? "Generating…" : "No output yet")}
+            </div>
+          )}
           <RowHandle side="right" kind="source" id="response" dataType="text" />
         </div>
       </div>

@@ -21,6 +21,7 @@ const FIELD_TYPES: { type: FieldType; label: string }[] = [
 
 export function RequestInputsNodeView({ id, data, selected }: NodeProps<RequestInputsNode>) {
   const updateNodeData = useCanvasStore((s) => s.updateNodeData);
+  const runState = useCanvasStore((s) => s.runStates[id]);
   const [menuOpen, setMenuOpen] = useState(false);
   const fields = data.fields;
   const setFields = (next: InputField[]) => updateNodeData(id, { fields: next });
@@ -37,6 +38,7 @@ export function RequestInputsNodeView({ id, data, selected }: NodeProps<RequestI
     <NodeFrame
       title="Request-Inputs"
       selected={selected}
+      running={runState?.status === "RUNNING"}
       icon={<span className="text-[13px] leading-none">⌗</span>}
       headerAction={
         <div className="relative">

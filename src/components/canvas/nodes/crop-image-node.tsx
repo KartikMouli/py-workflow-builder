@@ -17,9 +17,17 @@ const PARAMS: { key: "x" | "y" | "width" | "height"; label: string }[] = [
 export function CropImageNodeView({ id, data, selected }: NodeProps<CropImageNode>) {
   const updateNodeData = useCanvasStore((s) => s.updateNodeData);
   const connected = useConnectedTargets(id);
+  const runState = useCanvasStore((s) => s.runStates[id]);
+  const outputImage = useCanvasStore((s) => s.outputs[id]?.["output-image"]) as string | undefined;
 
   return (
-    <NodeFrame title="Crop Image" selected={selected} showRun icon={<Crop className="h-3.5 w-3.5" />}>
+    <NodeFrame
+      title="Crop Image"
+      selected={selected}
+      showRun
+      running={runState?.status === "RUNNING"}
+      icon={<Crop className="h-3.5 w-3.5" />}
+    >
       <div className="space-y-3">
         <div className="relative">
           <label className="mb-1 block text-xs font-medium text-gray-600">
@@ -65,7 +73,18 @@ export function CropImageNodeView({ id, data, selected }: NodeProps<CropImageNod
 
         <div className="relative">
           <label className="mb-1 block text-xs font-medium text-gray-600">Output Image</label>
-          <div className="rounded-md bg-gray-50 py-3 text-center text-xs text-gray-400">No output yet</div>
+          {outputImage ? (
+            <div className="overflow-hidden rounded-md border border-gray-200">
+              <div
+                className="h-24 w-full bg-gray-50 bg-contain bg-center bg-no-repeat"
+                style={{ backgroundImage: `url("${outputImage}")` }}
+              />
+            </div>
+          ) : (
+            <div className="rounded-md bg-gray-50 py-3 text-center text-xs text-gray-400">
+              {runState?.error ?? (runState?.status === "RUNNING" ? "Cropping…" : "No output yet")}
+            </div>
+          )}
           <RowHandle side="right" kind="source" id="output-image" dataType="image" />
         </div>
       </div>
