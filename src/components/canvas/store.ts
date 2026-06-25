@@ -8,7 +8,13 @@ import {
 } from "@xyflow/react";
 import { useMemo } from "react";
 import { create } from "zustand";
-import { allowsMultipleInputs, isValidConnection as checkConnection, withEdgeStyle } from "./graph";
+import {
+  allowsMultipleInputs,
+  isValidConnection as checkConnection,
+  serializeGraph,
+  validateRunInputs,
+  withEdgeStyle,
+} from "./graph";
 import type { AppEdge, AppNode } from "./types";
 
 type Snapshot = { nodes: AppNode[]; edges: AppEdge[] };
@@ -23,6 +29,8 @@ type CanvasState = {
   past: Snapshot[];
   future: Snapshot[];
   dragging: boolean;
+  workflowId: string;
+  toast: string | null;
   liveRun: LiveRun;
   runStates: Record<string, NodeRunState>;
   outputs: Record<string, Record<string, unknown>>;
@@ -38,6 +46,10 @@ type CanvasState = {
   setGraph: (nodes: AppNode[], edges: AppEdge[]) => void;
   undo: () => void;
   redo: () => void;
+  setWorkflowId: (id: string) => void;
+  showToast: (message: string) => void;
+  dismissToast: () => void;
+  runWorkflow: (scope: "FULL" | "SINGLE", targets?: string[]) => Promise<void>;
   startLiveRun: (run: NonNullable<LiveRun>) => void;
   setRunStates: (states: Record<string, NodeRunState>) => void;
   setOutputs: (outputs: Record<string, Record<string, unknown>>) => void;
@@ -56,6 +68,8 @@ export const useCanvasStore = create<CanvasState>((set, get) => {
     past: [],
     future: [],
     dragging: false,
+    workflowId: "",
+    toast: null,
     liveRun: null,
     runStates: {},
     outputs: {},
@@ -176,6 +190,39 @@ export const useCanvasStore = create<CanvasState>((set, get) => {
         future: future.slice(1),
         past: [...s.past, { nodes: s.nodes, edges: s.edges }].slice(-HISTORY_LIMIT),
       }));
+    },
+
+    setWorkflowId: (id) => set({ workflowId: id }),
+    showToast: (message) => set({ toast: message }),
+    dismissToast: () => set({ toast: null }),
+
+    runWorkflow: async (scope, targets) => {
+      const { nodes, edges, workflowId } = get();
+      const scopeNodes = targets ? nodes.filter((n) => targets.includes(n.id)) : nodes;
+      const error = validateRunInputs(scopeNodes, edges, scope);
+      if (error) {
+        set({ toast: error });
+        return;
+      }
+      try {
+        const res = await fetch(`/api/workflows/${workflowId}/runs`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ scope, targets, graph: serializeGraph(nodes, edges) }),
+        });
+        if (!res.ok) {
+          set({ toast: "Couldn't start the run." });
+          return;
+        }
+        const { dbRunId, triggerRunId, publicAccessToken } = await res.json();
+        set({
+          liveRun: { dbRunId, triggerRunId, token: publicAccessToken },
+          runStates: {},
+          outputs: {},
+        });
+      } catch {
+        set({ toast: "Couldn't start the run." });
+      }
     },
 
     startLiveRun: (run) => set({ liveRun: run, runStates: {}, outputs: {} }),
