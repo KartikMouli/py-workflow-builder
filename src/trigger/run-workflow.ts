@@ -110,9 +110,17 @@ export const runWorkflowTask = task({
     const outputs: Record<string, NodeOutput> = {};
     const state: Record<string, NodeState> = {};
 
-    const publish = async () => {
-      metadata.set("nodes", state);
-      await metadata.flush();
+    // Serialize flushes so parallel branches don't race: concurrent metadata.flush()
+    // calls can land out of order and drop a node's RUNNING frame. Each publish
+    // snapshots the state at call-time so its frame is preserved in order.
+    let publishChain: Promise<void> = Promise.resolve();
+    const publish = () => {
+      const snapshot = structuredClone(state);
+      publishChain = publishChain.then(async () => {
+        metadata.set("nodes", snapshot);
+        await metadata.flush();
+      }, () => {});
+      return publishChain;
     };
 
     function resolveInput<T>(nodeId: string, handleId: string, fallback: T): T | unknown {
@@ -211,6 +219,7 @@ export const runWorkflowTask = task({
 
     const rootIds = payload.targets?.length ? payload.targets : nodes.map((n) => n.id);
     const settled = await Promise.allSettled(rootIds.map((id) => schedule(id)));
+    await publishChain;
     const failed = settled.some((s) => s.status === "rejected");
     const ranNodes = nodes.filter((n) => state[n.id]);
 
