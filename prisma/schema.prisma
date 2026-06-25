@@ -1,0 +1,79 @@
+// Py — Workflow Builder · Prisma schema
+// Postgres (Neon). Workflow graph (nodes+edges) is stored as JSON to match React Flow
+// and keep export/import trivial. Runs + per-node runs power the history panel.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Workflow {
+  id        String   @id @default(cuid())
+  userId    String // Clerk user id (owner)
+  name      String
+  graph     Json     @default("{\"nodes\":[],\"edges\":[]}") // { nodes: [...], edges: [...] } — also the export shape
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  runs      Run[]
+
+  @@index([userId])
+}
+
+model Run {
+  id           String    @id @default(cuid())
+  workflowId   String
+  userId       String
+  scope        RunScope
+  status       RunStatus @default(RUNNING)
+  triggerRunId String? // Trigger.dev run id, for Realtime subscription
+  startedAt    DateTime  @default(now())
+  finishedAt   DateTime?
+  durationMs   Int?
+  workflow     Workflow  @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  nodeRuns     NodeRun[]
+
+  @@index([workflowId])
+  @@index([userId])
+}
+
+model NodeRun {
+  id         String     @id @default(cuid())
+  runId      String
+  nodeId     String // matches the React Flow node id
+  nodeType   String
+  status     NodeStatus @default(PENDING)
+  inputs     Json?
+  output     Json?
+  error      String?
+  startedAt  DateTime?
+  finishedAt DateTime?
+  durationMs Int?
+  run        Run        @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@index([runId])
+}
+
+enum RunScope {
+  FULL
+  PARTIAL
+  SINGLE
+}
+
+enum RunStatus {
+  RUNNING
+  SUCCESS
+  FAILED
+  PARTIAL
+}
+
+enum NodeStatus {
+  PENDING
+  RUNNING
+  SUCCESS
+  FAILED
+  SKIPPED
+}
