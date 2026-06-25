@@ -1,4 +1,5 @@
 import { type Connection, type Edge, getOutgoers } from "@xyflow/react";
+import { z } from "zod";
 import { type AppEdge, type AppNode, type DataType, TYPE_COLOR, fieldDataType } from "./types";
 
 export function handleDataType(node: AppNode, handleId: string | null | undefined): DataType {
@@ -77,4 +78,53 @@ export function withEdgeStyle(edge: AppEdge, nodes: AppNode[]): AppEdge {
     animated: false,
     style: { ...edge.style, stroke: TYPE_COLOR[type], strokeWidth: 2.5 },
   };
+}
+
+export function serializeGraph(nodes: AppNode[], edges: AppEdge[]) {
+  return {
+    nodes: nodes.map((n) => ({
+      id: n.id,
+      type: n.type,
+      position: n.position,
+      data: n.data,
+      ...(n.deletable === false ? { deletable: false } : {}),
+      ...(n.draggable === false ? { draggable: false } : {}),
+      ...(n.connectable === false ? { connectable: false } : {}),
+    })),
+    edges: edges.map((e) => ({
+      id: e.id,
+      source: e.source,
+      target: e.target,
+      sourceHandle: e.sourceHandle ?? null,
+      targetHandle: e.targetHandle ?? null,
+    })),
+  };
+}
+
+// Required inputs per node type — checked before a run.
+const REQUIRED_INPUTS: Record<string, { handle: string; label: string; dataKey: string }[]> = {
+  gemini: [{ handle: "prompt", label: "Prompt", dataKey: "prompt" }],
+  "crop-image": [{ handle: "input-image", label: "Input Image", dataKey: "inputImageUrl" }],
+};
+
+const requiredString = z.string().min(1);
+
+// Returns the first validation error message, or null if all required inputs are satisfied.
+// FULL run: a required input is satisfied by an incoming edge or a manual value.
+// SINGLE run: upstream nodes don't run, so only a manual value satisfies it.
+export function validateRunInputs(
+  nodes: AppNode[],
+  edges: AppEdge[],
+  scope: "FULL" | "SINGLE",
+): string | null {
+  for (const node of nodes) {
+    for (const req of REQUIRED_INPUTS[node.type ?? ""] ?? []) {
+      const connected = edges.some((e) => e.target === node.id && e.targetHandle === req.handle);
+      if (scope === "FULL" && connected) continue;
+      const value = (node.data as Record<string, unknown>)[req.dataKey];
+      const parsed = requiredString.safeParse(typeof value === "string" ? value.trim() : value);
+      if (!parsed.success) return `"${req.label}" ${parsed.error.issues[0].message}`;
+    }
+  }
+  return null;
 }
