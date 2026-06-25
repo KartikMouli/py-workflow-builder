@@ -10,8 +10,8 @@ import {
   ReactFlow,
   ReactFlowProvider,
 } from "@xyflow/react";
-import { Check, Loader2 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Check, Loader2, TriangleAlert } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CanvasTopBar } from "./canvas-top-bar";
 import { NodePicker } from "./node-picker";
 import { CropImageNodeView } from "./nodes/crop-image-node";
@@ -73,7 +73,8 @@ export function WorkflowCanvas({
   const liveRun = useCanvasStore((s) => s.liveRun);
   const startLiveRun = useCanvasStore((s) => s.startLiveRun);
   const clearLiveRun = useCanvasStore((s) => s.clearLiveRun);
-  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const pendingBody = useRef<string | null>(null);
 
   const displayEdges = useMemo(
     () => (liveRun ? edges.map((e) => ({ ...e, animated: true })) : edges),
@@ -125,24 +126,47 @@ export function WorkflowCanvas({
 
   useEffect(() => {
     if (nodes.length === 0) return;
+    const body = JSON.stringify({ graph: serializeGraph(nodes, edges) });
+    pendingBody.current = body;
     const t = setTimeout(() => {
       setSaveState("saving");
-      void fetch(`/api/workflows/${workflowId}`, {
+      fetch(`/api/workflows/${workflowId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ graph: serializeGraph(nodes, edges) }),
+        body,
       })
-        .catch(() => {})
-        .finally(() => setSaveState("saved"));
+        .then((r) => {
+          if (r.ok) pendingBody.current = null;
+          setSaveState(r.ok ? "saved" : "error");
+        })
+        .catch(() => setSaveState("error"));
     }, 800);
     return () => clearTimeout(t);
   }, [nodes, edges, workflowId]);
 
   useEffect(() => {
-    if (saveState !== "saved") return;
-    const t = setTimeout(() => setSaveState("idle"), 1500);
+    if (saveState !== "saved" && saveState !== "error") return;
+    const t = setTimeout(() => setSaveState("idle"), saveState === "error" ? 4000 : 1500);
     return () => clearTimeout(t);
   }, [saveState]);
+
+  // Flush the last pending change when navigating away or reloading mid-debounce.
+  useEffect(() => {
+    const flush = () => {
+      if (!pendingBody.current) return;
+      void fetch(`/api/workflows/${workflowId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: pendingBody.current,
+        keepalive: true,
+      }).catch(() => {});
+    };
+    window.addEventListener("pagehide", flush);
+    return () => {
+      window.removeEventListener("pagehide", flush);
+      flush();
+    };
+  }, [workflowId]);
 
   return (
     <ReactFlowProvider>
@@ -165,15 +189,22 @@ export function WorkflowCanvas({
         </ReactFlow>
         {saveState !== "idle" && (
           <div className="absolute left-1/2 top-4 z-10 flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs shadow-sm">
-            {saveState === "saving" ? (
+            {saveState === "saving" && (
               <>
                 <Loader2 className="h-3.5 w-3.5 animate-spin text-gray-500" />
                 <span className="text-gray-500">Saving…</span>
               </>
-            ) : (
+            )}
+            {saveState === "saved" && (
               <>
                 <Check className="h-3.5 w-3.5 text-green-600" />
                 <span className="font-medium text-green-600">Saved</span>
+              </>
+            )}
+            {saveState === "error" && (
+              <>
+                <TriangleAlert className="h-3.5 w-3.5 text-red-600" />
+                <span className="font-medium text-red-600">Save failed</span>
               </>
             )}
           </div>
