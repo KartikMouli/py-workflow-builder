@@ -33,27 +33,47 @@ export function StickyNoteNodeView({ id, data, selected }: NodeProps<StickyNoteN
   return (
     <>
       <NodeToolbar isVisible={selected} position={Position.Right} offset={12}>
-        <div className="flex flex-col gap-2 rounded-lg border border-gray-200 bg-white p-2 shadow-lg">
-          <div className="flex gap-1">
-            {COLOR_KEYS.map((key) => (
-              <button
-                key={key}
-                type="button"
-                aria-label={key}
-                onClick={() => set({ color: key })}
-                style={{ background: COLORS[key].bg, borderColor: COLORS[key].border }}
-                className={`h-5 w-5 rounded-full border ${data.color === key ? "ring-2 ring-gray-400 ring-offset-1" : ""}`}
-              />
-            ))}
-          </div>
-          <div className="flex items-center gap-1">
+        <div className="flex w-12 flex-col items-center gap-1.5 rounded-2xl border border-gray-200 bg-white p-1.5 shadow-lg">
+          {COLOR_KEYS.map((key) => (
+            <button
+              key={key}
+              type="button"
+              aria-label={key}
+              onClick={() => set({ color: key })}
+              style={{ background: COLORS[key].header, borderColor: COLORS[key].border }}
+              className={`h-8 w-8 rounded-full border ${data.color === key ? "ring-2 ring-gray-500 ring-offset-2" : ""}`}
+            />
+          ))}
+
+          <button
+            type="button"
+            onClick={() => set({ bold: !data.bold })}
+            className={`h-8 w-8 rounded-lg text-sm font-bold ${data.bold ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+          >
+            B
+          </button>
+
+          <div className="flex w-9 flex-col items-center gap-0.5 rounded-lg bg-gray-100 py-1">
             <button
               type="button"
-              onClick={() => set({ bold: !data.bold })}
-              className={`h-7 w-7 rounded text-sm font-bold ${data.bold ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+              aria-label="Increase font size"
+              onClick={() => set({ fontSize: Math.min(40, fontSize + 2) })}
+              className="text-sm font-semibold text-gray-700 hover:text-gray-900"
             >
-              B
+              A+
             </button>
+            <span className="text-xs font-medium text-gray-500">{fontSize}</span>
+            <button
+              type="button"
+              aria-label="Decrease font size"
+              onClick={() => set({ fontSize: Math.max(10, fontSize - 2) })}
+              className="text-sm font-semibold text-gray-700 hover:text-gray-900"
+            >
+              A−
+            </button>
+          </div>
+
+          <div className="flex w-9 flex-col items-center gap-1 rounded-lg bg-gray-100 p-1">
             {(["sans", "serif", "mono"] as const).map((fam) => (
               <button
                 key={fam}
@@ -61,30 +81,11 @@ export function StickyNoteNodeView({ id, data, selected }: NodeProps<StickyNoteN
                 aria-label={`Font ${fam}`}
                 onClick={() => set({ fontFamily: fam })}
                 style={{ fontFamily: FONT_FAMILY[fam] }}
-                className={`h-7 w-7 rounded text-xs ${fontFamily === fam ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+                className={`h-7 w-7 rounded text-xs ${fontFamily === fam ? "bg-gray-900 text-white" : "text-gray-700 hover:bg-gray-200"}`}
               >
                 Aa
               </button>
             ))}
-          </div>
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              aria-label="Decrease font size"
-              onClick={() => set({ fontSize: Math.max(10, fontSize - 2) })}
-              className="h-7 w-7 rounded bg-gray-100 text-xs text-gray-700 hover:bg-gray-200"
-            >
-              A−
-            </button>
-            <span className="w-7 text-center text-xs text-gray-600">{fontSize}</span>
-            <button
-              type="button"
-              aria-label="Increase font size"
-              onClick={() => set({ fontSize: Math.min(40, fontSize + 2) })}
-              className="h-7 w-7 rounded bg-gray-100 text-xs text-gray-700 hover:bg-gray-200"
-            >
-              A+
-            </button>
           </div>
         </div>
       </NodeToolbar>
