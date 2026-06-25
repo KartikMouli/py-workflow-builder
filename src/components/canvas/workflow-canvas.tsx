@@ -4,14 +4,13 @@ import "@xyflow/react/dist/style.css";
 import {
   Background,
   BackgroundVariant,
-  Controls,
-  MiniMap,
   type NodeTypes,
   ReactFlow,
   ReactFlowProvider,
 } from "@xyflow/react";
 import { Check, Loader2, TriangleAlert } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { CanvasControls, CanvasMinimap } from "./canvas-controls";
 import { CanvasTopBar } from "./canvas-top-bar";
 import { serializeGraph } from "./graph";
 import { NodePicker } from "./node-picker";
@@ -156,8 +155,8 @@ export function WorkflowCanvas({
           proOptions={{ hideAttribution: true }}
         >
           <Background variant={BackgroundVariant.Dots} gap={20} size={1.5} color="#d4d4d8" />
-          <MiniMap pannable zoomable />
-          <Controls />
+          <CanvasControls />
+          <CanvasMinimap />
         </ReactFlow>
         {saveState !== "idle" && (
           <div className="absolute left-1/2 top-4 z-10 flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs shadow-sm">
