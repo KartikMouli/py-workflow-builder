@@ -92,7 +92,7 @@ export function DashboardView({ workflows }: { workflows: WorkflowListItem[] }) 
       <div className="mx-auto max-w-6xl px-8 py-8">
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-2xl font-semibold text-gray-900">Flow</h1>
+            <h1 className="text-3xl font-semibold text-gray-900">Flow</h1>
             <p className="mt-1 text-sm text-gray-500">Build workflows or run models directly</p>
           </div>
           <div className="flex items-center gap-2">
@@ -125,8 +125,8 @@ export function DashboardView({ workflows }: { workflows: WorkflowListItem[] }) 
         </div>
 
         <section className="mt-8">
-          <h2 className="text-sm font-semibold text-gray-900">System Workflows</h2>
-          <p className="mt-0.5 text-xs text-gray-500">
+          <h2 className="text-base font-semibold text-gray-900">System Workflows</h2>
+          <p className="mt-0.5 text-sm text-gray-500">
             Prebuilt workflow templates — click to open and start using.
           </p>
           <button
@@ -145,8 +145,8 @@ export function DashboardView({ workflows }: { workflows: WorkflowListItem[] }) 
         <section className="mt-10">
           <div className="flex items-end justify-between gap-4">
             <div>
-              <h2 className="text-sm font-semibold text-gray-900">Your Workflows</h2>
-              <p className="mt-0.5 text-xs text-gray-500">Open one to edit, run, and review history.</p>
+              <h2 className="text-base font-semibold text-gray-900">Your Workflows</h2>
+              <p className="mt-0.5 text-sm text-gray-500">Open one to edit, run, and review history.</p>
             </div>
             <div className="relative w-64">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
