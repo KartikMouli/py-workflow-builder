@@ -43,9 +43,9 @@ export function WorkflowCard({
       <button
         type="button"
         onClick={onOpen}
-        className="flex h-28 items-center justify-center bg-linear-to-br from-indigo-50 to-purple-100"
+        className="flex h-28 items-center justify-center bg-gray-100"
       >
-        <Workflow className="h-8 w-8 text-brand/60" />
+        <Workflow className="h-8 w-8 text-gray-400" />
       </button>
       <div className="flex items-center justify-between gap-2 px-3 py-2">
         <button type="button" onClick={onOpen} className="min-w-0 flex-1 text-left">

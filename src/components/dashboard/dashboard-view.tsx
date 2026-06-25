@@ -135,8 +135,8 @@ export function DashboardView({ workflows }: { workflows: WorkflowListItem[] }) 
             disabled={busy}
             className="mt-3 flex w-56 flex-col overflow-hidden rounded-xl border border-gray-200 bg-white text-left hover:border-brand/40 hover:shadow-sm disabled:opacity-50"
           >
-            <div className="flex h-28 items-center justify-center bg-linear-to-br from-indigo-50 to-purple-100">
-              <Workflow className="h-8 w-8 text-brand/70" />
+            <div className="flex h-28 items-center justify-center bg-gray-100">
+              <Workflow className="h-8 w-8 text-gray-400" />
             </div>
             <span className="px-3 py-2 text-sm font-medium text-gray-800">Trial Task Workflow</span>
           </button>

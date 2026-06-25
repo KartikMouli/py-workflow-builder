@@ -31,7 +31,7 @@ export function AppSidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="flex h-full w-60 shrink-0 flex-col border-r border-gray-200 bg-white">
+    <aside className="flex h-full w-60 shrink-0 flex-col border-r border-gray-200 bg-sidebar">
       <div className="px-5 py-4 text-2xl font-bold tracking-tight text-gray-900">Py</div>
 
       <nav className="flex-1 space-y-0.5 px-3">
@@ -40,8 +40,8 @@ export function AppSidebar() {
           const base =
             "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors";
           const tone = active
-            ? "bg-gray-100 font-medium text-gray-900"
-            : "text-gray-600 hover:bg-gray-50";
+            ? "bg-[#dadada] font-medium text-gray-900"
+            : "text-gray-600 hover:bg-[#e6e6e6]";
 
           return href ? (
             <Link key={label} href={href} className={`${base} ${tone}`}>
@@ -66,7 +66,7 @@ export function AppSidebar() {
       <div className="space-y-2 p-3">
         <button
           type="button"
-          className="flex w-full items-center justify-center gap-2 rounded-full border border-gray-200 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+          className="flex w-full items-center justify-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
         >
           <Settings className="h-4 w-4" />
           Settings
