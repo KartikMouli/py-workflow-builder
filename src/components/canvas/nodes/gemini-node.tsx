@@ -3,7 +3,7 @@
 import type { NodeProps } from "@xyflow/react";
 import { ChevronDown, Sparkles } from "lucide-react";
 import { useState } from "react";
-import { useCanvasStore } from "../store";
+import { useCanvasStore, useConnectedTargets } from "../store";
 import type { DataType, GeminiNode } from "../types";
 import { NodeFrame, RowHandle } from "./node-frame";
 
@@ -16,6 +16,7 @@ const UPLOAD_INPUTS: { id: string; label: string; type: DataType }[] = [
 
 export function GeminiNodeView({ id, data, selected }: NodeProps<GeminiNode>) {
   const updateNodeData = useCanvasStore((s) => s.updateNodeData);
+  const connected = useConnectedTargets(id);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   return (
@@ -33,10 +34,11 @@ export function GeminiNodeView({ id, data, selected }: NodeProps<GeminiNode>) {
           </label>
           <textarea
             value={data.prompt ?? ""}
+            disabled={connected.has("prompt")}
             onChange={(e) => updateNodeData(id, { prompt: e.target.value })}
-            placeholder="Enter prompt..."
+            placeholder={connected.has("prompt") ? "Connected" : "Enter prompt..."}
             rows={2}
-            className="nodrag w-full resize-none rounded-md border border-gray-200 px-2 py-1.5 text-xs outline-none focus:border-brand/40"
+            className="nodrag w-full resize-none rounded-md border border-gray-200 px-2 py-1.5 text-xs outline-none focus:border-brand/40 disabled:opacity-50"
           />
           <RowHandle side="left" kind="target" id="prompt" dataType="text" />
         </div>
@@ -45,10 +47,11 @@ export function GeminiNodeView({ id, data, selected }: NodeProps<GeminiNode>) {
           <label className="mb-1 block text-xs font-medium text-gray-600">System Prompt</label>
           <textarea
             value={data.systemPrompt ?? ""}
+            disabled={connected.has("system-prompt")}
             onChange={(e) => updateNodeData(id, { systemPrompt: e.target.value })}
-            placeholder="Optional system prompt..."
+            placeholder={connected.has("system-prompt") ? "Connected" : "Optional system prompt..."}
             rows={2}
-            className="nodrag w-full resize-none rounded-md border border-gray-200 px-2 py-1.5 text-xs outline-none focus:border-brand/40"
+            className="nodrag w-full resize-none rounded-md border border-gray-200 px-2 py-1.5 text-xs outline-none focus:border-brand/40 disabled:opacity-50"
           />
           <RowHandle side="left" kind="target" id="system-prompt" dataType="text" />
         </div>
@@ -58,9 +61,10 @@ export function GeminiNodeView({ id, data, selected }: NodeProps<GeminiNode>) {
             <label className="mb-1 block text-xs font-medium text-gray-600">{inp.label}</label>
             <button
               type="button"
-              className="nodrag w-full rounded-md border border-dashed border-gray-300 py-2 text-xs text-gray-400 hover:bg-gray-100"
+              disabled={connected.has(inp.id)}
+              className="nodrag w-full rounded-md border border-dashed border-gray-300 py-2 text-xs text-gray-400 hover:bg-gray-100 disabled:opacity-50 disabled:hover:bg-transparent"
             >
-              Upload {inp.label.toLowerCase()}
+              {connected.has(inp.id) ? "Connected" : `Upload ${inp.label.toLowerCase()}`}
             </button>
             <RowHandle side="left" kind="target" id={inp.id} dataType={inp.type} />
           </div>

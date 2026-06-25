@@ -2,7 +2,7 @@
 
 import type { NodeProps } from "@xyflow/react";
 import { Crop } from "lucide-react";
-import { useCanvasStore } from "../store";
+import { useCanvasStore, useConnectedTargets } from "../store";
 import type { CropImageNode } from "../types";
 import { NodeFrame, RowHandle } from "./node-frame";
 
@@ -15,6 +15,7 @@ const PARAMS: { key: "x" | "y" | "width" | "height"; label: string }[] = [
 
 export function CropImageNodeView({ id, data, selected }: NodeProps<CropImageNode>) {
   const updateNodeData = useCanvasStore((s) => s.updateNodeData);
+  const connected = useConnectedTargets(id);
 
   return (
     <NodeFrame title="Crop Image" selected={selected} showRun icon={<Crop className="h-3.5 w-3.5" />}>
@@ -25,37 +26,43 @@ export function CropImageNodeView({ id, data, selected }: NodeProps<CropImageNod
           </label>
           <button
             type="button"
-            className="nodrag w-full rounded-md border border-dashed border-gray-300 py-3 text-xs text-gray-400 hover:bg-gray-100"
+            disabled={connected.has("input-image")}
+            className="nodrag w-full rounded-md border border-dashed border-gray-300 py-3 text-xs text-gray-400 hover:bg-gray-100 disabled:opacity-50 disabled:hover:bg-transparent"
           >
-            Upload image
+            {connected.has("input-image") ? "Connected" : "Upload image"}
           </button>
           <RowHandle side="left" kind="target" id="input-image" dataType="image" />
         </div>
 
-        {PARAMS.map((p) => (
-          <div key={p.key} className="relative">
-            <div className="mb-1 flex items-center justify-between">
-              <label className="text-xs font-medium text-gray-600">{p.label}</label>
+        {PARAMS.map((p) => {
+          const isConnected = connected.has(p.key);
+          return (
+            <div key={p.key} className={`relative ${isConnected ? "opacity-50" : ""}`}>
+              <div className="mb-1 flex items-center justify-between">
+                <label className="text-xs font-medium text-gray-600">{p.label}</label>
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  disabled={isConnected}
+                  value={data[p.key]}
+                  onChange={(e) => updateNodeData(id, { [p.key]: Number(e.target.value) })}
+                  className="nodrag w-14 rounded border border-gray-200 px-1.5 py-0.5 text-right text-xs outline-none"
+                />
+              </div>
               <input
-                type="number"
+                type="range"
                 min={0}
                 max={100}
+                disabled={isConnected}
                 value={data[p.key]}
                 onChange={(e) => updateNodeData(id, { [p.key]: Number(e.target.value) })}
-                className="nodrag w-14 rounded border border-gray-200 px-1.5 py-0.5 text-right text-xs outline-none"
+                className="nodrag w-full accent-brand"
               />
+              <RowHandle side="left" kind="target" id={p.key} dataType="number" />
             </div>
-            <input
-              type="range"
-              min={0}
-              max={100}
-              value={data[p.key]}
-              onChange={(e) => updateNodeData(id, { [p.key]: Number(e.target.value) })}
-              className="nodrag w-full accent-brand"
-            />
-            <RowHandle side="left" kind="target" id={p.key} dataType="number" />
-          </div>
-        ))}
+          );
+        })}
 
         <div className="relative">
           <label className="mb-1 block text-xs font-medium text-gray-600">Output Image</label>
