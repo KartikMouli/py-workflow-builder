@@ -114,7 +114,7 @@ export function PlaygroundTab({ workflowId, graph }: { workflowId: string; graph
 
   return (
     <div className="px-8 py-6">
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_3fr]">
         <section className="flex min-h-160 flex-col rounded-2xl border border-gray-200 bg-white p-6">
           <div className="flex items-start justify-between gap-3">
             <div>
