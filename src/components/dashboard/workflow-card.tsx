@@ -95,8 +95,8 @@ export function WorkflowCard({
   }
 
   return (
-    <div className="group relative flex flex-col rounded-2xl border border-gray-200 bg-white p-2 transition-shadow hover:shadow-md">
-      <div className="relative aspect-16/10 overflow-hidden rounded-xl bg-gray-100">
+    <div className="group relative flex flex-col">
+      <div className="relative aspect-video overflow-hidden rounded-2xl bg-gray-100">
         <button
           type="button"
           onClick={onOpen}
@@ -122,12 +122,12 @@ export function WorkflowCard({
         type="button"
         onClick={() => fileRef.current?.click()}
         aria-label="Edit thumbnail"
-        className="absolute left-4 top-4 flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-white/90 text-gray-600 opacity-0 shadow-sm backdrop-blur transition-opacity hover:bg-white hover:text-gray-900 group-hover:opacity-100"
+        className="absolute left-3 top-3 flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-white/90 text-gray-600 opacity-0 shadow-sm backdrop-blur transition-opacity hover:bg-white hover:text-gray-900 group-hover:opacity-100"
       >
         <ImagePlus className="h-4 w-4" />
       </button>
 
-      <div ref={menuRef} className="absolute right-4 top-4">
+      <div ref={menuRef} className="absolute right-3 top-3">
         <button
           type="button"
           onClick={() => setMenuOpen((v) => !v)}
@@ -159,9 +159,9 @@ export function WorkflowCard({
         )}
       </div>
 
-      <button type="button" onClick={onOpen} className="px-1 pb-1 pt-2.5 text-left">
+      <button type="button" onClick={onOpen} className="px-0.5 pt-3 text-left">
         <p className="truncate text-sm font-medium text-gray-900">{workflow.name}</p>
-        <p className="mt-0.5 text-xs text-gray-400" suppressHydrationWarning>
+        <p className="mt-1 text-xs text-gray-400" suppressHydrationWarning>
           {formatEdited(workflow.updatedAt)}
         </p>
       </button>

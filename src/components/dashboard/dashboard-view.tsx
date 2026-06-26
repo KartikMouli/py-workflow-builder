@@ -143,7 +143,7 @@ export function DashboardView({ workflows }: { workflows: WorkflowListItem[] }) 
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="mx-auto max-w-6xl px-8 py-8">
+      <div className="mx-auto max-w-[1600px] px-10 py-8">
         <div className="flex items-start justify-between">
           <div>
             <h1 className="text-3xl font-semibold text-gray-900">Flow</h1>
@@ -187,12 +187,12 @@ export function DashboardView({ workflows }: { workflows: WorkflowListItem[] }) 
             type="button"
             onClick={createTrialWorkflow}
             disabled={busy}
-            className="mt-3 flex w-56 flex-col overflow-hidden rounded-xl border border-gray-200 bg-white text-left hover:border-brand/40 hover:shadow-sm disabled:opacity-50"
+            className="mt-3 flex w-80 flex-col rounded-2xl border border-gray-200 bg-white p-2 text-left transition-shadow hover:shadow-md disabled:opacity-50"
           >
-            <div className="flex h-28 items-center justify-center bg-gray-100">
-              <Workflow className="h-8 w-8 text-gray-400" />
+            <div className="flex aspect-4/3 w-full items-center justify-center overflow-hidden rounded-xl bg-gray-100">
+              <Workflow className="h-10 w-10 text-gray-400" />
             </div>
-            <span className="px-3 py-2 text-sm font-medium text-gray-800">Trial Task Workflow</span>
+            <span className="px-2 pb-1 pt-3 text-sm font-medium text-gray-800">Trial Task Workflow</span>
           </button>
         </section>
 
@@ -237,7 +237,7 @@ export function DashboardView({ workflows }: { workflows: WorkflowListItem[] }) 
               )}
             </div>
           ) : (
-            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="mt-5 grid grid-cols-1 gap-x-5 gap-y-7 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
               {filtered.map((w) => (
                 <WorkflowCard
                   key={w.id}
