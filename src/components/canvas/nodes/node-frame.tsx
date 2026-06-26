@@ -1,5 +1,5 @@
 import { Handle, Position } from "@xyflow/react";
-import { Check, Clock, Info, Loader2, MoreHorizontal, Play, RotateCcw, X } from "lucide-react";
+import { Check, Clock, Coins, Info, Loader2, MoreHorizontal, Play, RotateCcw, X } from "lucide-react";
 import { type CSSProperties, type ReactNode, useState } from "react";
 import { useCanvasStore } from "../store";
 import { type DataType, TYPE_COLOR } from "../types";
@@ -120,6 +120,7 @@ export function NodeFrame({
   showRun,
   headerAction,
   children,
+  cost,
   width = 264,
 }: {
   title: string;
@@ -130,6 +131,7 @@ export function NodeFrame({
   showRun?: boolean;
   headerAction?: ReactNode;
   children: ReactNode;
+  cost?: number;
   width?: number;
 }) {
   const locked = useCanvasStore((s) =>
@@ -181,6 +183,11 @@ export function NodeFrame({
         {menuNodeId && <NodeMenu nodeId={menuNodeId} locked={locked} />}
       </div>
       <div className="p-3">{children}</div>
+      {cost != null && (
+        <div className="flex items-center justify-end gap-1 px-3 pb-2 text-[10px] text-gray-400">
+          <Coins className="h-2.5 w-2.5" />~{cost}M
+        </div>
+      )}
     </div>
   );
 }

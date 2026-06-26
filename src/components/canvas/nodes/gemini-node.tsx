@@ -32,6 +32,7 @@ export function GeminiNodeView({ id, data, selected }: NodeProps<GeminiNode>) {
       selected={selected}
       showRun
       width={300}
+      cost={0.0025}
       runStatus={liveRun ? (runState?.status as RunPhase | undefined) : undefined}
     >
       <div className="space-y-3">

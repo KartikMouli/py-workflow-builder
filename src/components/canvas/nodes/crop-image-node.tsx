@@ -27,6 +27,7 @@ export function CropImageNodeView({ id, data, selected }: NodeProps<CropImageNod
       menuNodeId={id}
       selected={selected}
       showRun
+      cost={0.001}
       runStatus={liveRun ? (runState?.status as RunPhase | undefined) : undefined}
     >
       <div className="space-y-3">
