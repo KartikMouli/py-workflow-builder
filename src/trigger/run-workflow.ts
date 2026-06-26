@@ -218,6 +218,18 @@ export const runWorkflowTask = task({
     }
 
     const rootIds = payload.targets?.length ? payload.targets : nodes.map((n) => n.id);
+
+    // Mark every node that will run as PENDING up front so the UI shows queued badges.
+    const scopeIds = new Set<string>();
+    const collectScope = (nodeId: string) => {
+      if (scopeIds.has(nodeId)) return;
+      scopeIds.add(nodeId);
+      if (!single) for (const e of edges) if (e.target === nodeId) collectScope(e.source);
+    };
+    rootIds.forEach(collectScope);
+    for (const id of scopeIds) state[id] = { status: NodeStatus.PENDING };
+    await publish();
+
     const settled = await Promise.allSettled(rootIds.map((id) => schedule(id)));
     await publishChain;
     const failed = settled.some((s) => s.status === "rejected");

@@ -4,7 +4,7 @@ import type { NodeProps } from "@xyflow/react";
 import { useCanvasStore, useConnectedTargets } from "../store";
 import type { CropImageNode } from "../types";
 import { ImageUploadButton } from "./image-upload-button";
-import { NodeFrame, RowHandle } from "./node-frame";
+import { NodeFrame, type RunPhase, RowHandle } from "./node-frame";
 
 const PARAMS: { key: "x" | "y" | "width" | "height"; label: string }[] = [
   { key: "x", label: "X Position (%)" },
@@ -16,6 +16,7 @@ const PARAMS: { key: "x" | "y" | "width" | "height"; label: string }[] = [
 export function CropImageNodeView({ id, data, selected }: NodeProps<CropImageNode>) {
   const updateNodeData = useCanvasStore((s) => s.updateNodeData);
   const connected = useConnectedTargets(id);
+  const liveRun = useCanvasStore((s) => s.liveRun);
   const runState = useCanvasStore((s) => s.runStates[id]);
   const outputImage = useCanvasStore((s) => s.outputs[id]?.["output-image"]) as string | undefined;
 
@@ -26,7 +27,7 @@ export function CropImageNodeView({ id, data, selected }: NodeProps<CropImageNod
       menuNodeId={id}
       selected={selected}
       showRun
-      running={runState?.status === "RUNNING"}
+      runStatus={liveRun ? (runState?.status as RunPhase | undefined) : undefined}
     >
       <div className="space-y-3">
         <div className="relative">

@@ -6,7 +6,7 @@ import { useState } from "react";
 import { useCanvasStore } from "../store";
 import { type FieldType, type InputField, type RequestInputsNode, fieldDataType } from "../types";
 import { ImageUploadButton } from "./image-upload-button";
-import { NodeFrame, RowHandle } from "./node-frame";
+import { NodeFrame, type RunPhase, RowHandle } from "./node-frame";
 
 const FIELD_TYPES: { type: FieldType; label: string }[] = [
   { type: "text", label: "Text" },
@@ -21,6 +21,7 @@ const FIELD_TYPES: { type: FieldType; label: string }[] = [
 
 export function RequestInputsNodeView({ id, data, selected }: NodeProps<RequestInputsNode>) {
   const updateNodeData = useCanvasStore((s) => s.updateNodeData);
+  const liveRun = useCanvasStore((s) => s.liveRun);
   const runState = useCanvasStore((s) => s.runStates[id]);
   const [menuOpen, setMenuOpen] = useState(false);
   const fields = data.fields;
@@ -39,7 +40,7 @@ export function RequestInputsNodeView({ id, data, selected }: NodeProps<RequestI
       title="Request-Inputs"
       info="Define the inputs your workflow accepts. Each field becomes an output you can connect."
       selected={selected}
-      running={runState?.status === "RUNNING"}
+      runStatus={liveRun ? (runState?.status as RunPhase | undefined) : undefined}
       headerAction={
         <div className="relative">
           <button

@@ -4,7 +4,7 @@ import type { NodeProps } from "@xyflow/react";
 import { useMemo } from "react";
 import { useCanvasStore } from "../store";
 import type { ResponseNode } from "../types";
-import { NodeFrame, RowHandle } from "./node-frame";
+import { NodeFrame, type RunPhase, RowHandle } from "./node-frame";
 
 const BASE_NAME: Record<string, string> = {
   gemini: "gemini_3_flash",
@@ -13,6 +13,7 @@ const BASE_NAME: Record<string, string> = {
 };
 
 export function ResponseNodeView({ id, selected }: NodeProps<ResponseNode>) {
+  const liveRun = useCanvasStore((s) => s.liveRun);
   const runState = useCanvasStore((s) => s.runStates[id]);
   const edges = useCanvasStore((s) => s.edges);
   const nodes = useCanvasStore((s) => s.nodes);
@@ -36,7 +37,7 @@ export function ResponseNodeView({ id, selected }: NodeProps<ResponseNode>) {
       title="Response"
       info="Collects the final outputs of your workflow. Connect any node's output here."
       selected={selected}
-      running={runState?.status === "RUNNING"}
+      runStatus={liveRun ? (runState?.status as RunPhase | undefined) : undefined}
     >
       <div className="relative">
         <span className="text-xs font-medium text-gray-600">result</span>

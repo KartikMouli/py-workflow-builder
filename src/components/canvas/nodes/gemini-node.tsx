@@ -6,7 +6,7 @@ import { useState } from "react";
 import { useCanvasStore, useConnectedTargets } from "../store";
 import type { DataType, GeminiNode } from "../types";
 import { ImageUploadButton } from "./image-upload-button";
-import { NodeFrame, RowHandle } from "./node-frame";
+import { NodeFrame, type RunPhase, RowHandle } from "./node-frame";
 
 const UPLOAD_INPUTS: { id: string; label: string; type: DataType }[] = [
   { id: "image", label: "Image (Vision)", type: "image" },
@@ -18,6 +18,7 @@ const UPLOAD_INPUTS: { id: string; label: string; type: DataType }[] = [
 export function GeminiNodeView({ id, data, selected }: NodeProps<GeminiNode>) {
   const updateNodeData = useCanvasStore((s) => s.updateNodeData);
   const connected = useConnectedTargets(id);
+  const liveRun = useCanvasStore((s) => s.liveRun);
   const runState = useCanvasStore((s) => s.runStates[id]);
   const outputResponse = useCanvasStore((s) => s.outputs[id]?.response) as string | undefined;
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -31,7 +32,7 @@ export function GeminiNodeView({ id, data, selected }: NodeProps<GeminiNode>) {
       selected={selected}
       showRun
       width={300}
-      running={runState?.status === "RUNNING"}
+      runStatus={liveRun ? (runState?.status as RunPhase | undefined) : undefined}
     >
       <div className="space-y-3">
         <div className="relative">

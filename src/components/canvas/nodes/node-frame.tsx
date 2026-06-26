@@ -1,5 +1,5 @@
 import { Handle, Position } from "@xyflow/react";
-import { Info, Loader2, MoreHorizontal, Play, RotateCcw } from "lucide-react";
+import { Check, Clock, Info, Loader2, MoreHorizontal, Play, RotateCcw, X } from "lucide-react";
 import { type CSSProperties, type ReactNode, useState } from "react";
 import { useCanvasStore } from "../store";
 import { type DataType, TYPE_COLOR } from "../types";
@@ -82,12 +82,41 @@ function MenuItem({
   );
 }
 
+export type RunPhase = "PENDING" | "RUNNING" | "SUCCESS" | "FAILED";
+
+const PHASE_BADGE: Record<RunPhase, { label: string; cls: string; icon: ReactNode }> = {
+  PENDING: { label: "Pending", cls: "bg-amber-500/10 text-amber-600", icon: <Clock className="h-3 w-3" /> },
+  RUNNING: {
+    label: "Running",
+    cls: "bg-brand/10 text-brand",
+    icon: <Loader2 className="h-3 w-3 animate-spin" />,
+  },
+  SUCCESS: {
+    label: "Completed",
+    cls: "bg-green-500/10 text-green-600",
+    icon: <Check className="h-3 w-3" />,
+  },
+  FAILED: { label: "Failed", cls: "bg-red-500/10 text-red-600", icon: <X className="h-3 w-3" /> },
+};
+
+function PhaseBadge({ phase }: { phase: RunPhase }) {
+  const p = PHASE_BADGE[phase];
+  return (
+    <span
+      className={`nodrag flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium ${p.cls}`}
+    >
+      {p.icon}
+      {p.label}
+    </span>
+  );
+}
+
 export function NodeFrame({
   title,
   info,
   menuNodeId,
   selected,
-  running,
+  runStatus,
   showRun,
   headerAction,
   children,
@@ -97,7 +126,7 @@ export function NodeFrame({
   info?: string;
   menuNodeId?: string;
   selected?: boolean;
-  running?: boolean;
+  runStatus?: RunPhase;
   showRun?: boolean;
   headerAction?: ReactNode;
   children: ReactNode;
@@ -107,11 +136,12 @@ export function NodeFrame({
     menuNodeId ? s.nodes.find((n) => n.id === menuNodeId)?.draggable === false : false,
   );
   const runWorkflow = useCanvasStore((s) => s.runWorkflow);
-  const ring = running
-    ? "border-brand animate-node-glow"
-    : selected
-      ? "border-brand ring-2 ring-brand/30"
-      : "border-gray-200";
+  const ring =
+    runStatus === "RUNNING"
+      ? "border-brand animate-node-glow"
+      : selected
+        ? "border-brand ring-2 ring-brand/30"
+        : "border-gray-200";
 
   return (
     <div className={`relative rounded-xl border bg-white shadow-sm ${ring}`} style={{ width }}>
@@ -123,13 +153,8 @@ export function NodeFrame({
         {info && <InfoHint text={info} />}
         <div className="flex-1" />
         {headerAction}
-        {running && (
-          <span className="nodrag flex items-center gap-1.5 rounded-md bg-brand/10 px-2.5 py-1.5 text-xs font-medium text-brand">
-            <Loader2 className="h-3 w-3 animate-spin" />
-            Running
-          </span>
-        )}
-        {showRun && !running && (
+        {runStatus && <PhaseBadge phase={runStatus} />}
+        {showRun && !runStatus && (
           <>
             <button
               type="button"
