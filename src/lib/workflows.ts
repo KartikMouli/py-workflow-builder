@@ -1,5 +1,6 @@
 import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
+import { prePlacedGraph } from "./templates";
 
 export function listWorkflows(userId: string) {
   return prisma.workflow.findMany({
@@ -14,7 +15,7 @@ export function getWorkflow(userId: string, id: string) {
 }
 
 export function createWorkflow(userId: string, name: string) {
-  return prisma.workflow.create({ data: { userId, name } });
+  return prisma.workflow.create({ data: { userId, name, graph: prePlacedGraph } });
 }
 
 export async function updateWorkflow(

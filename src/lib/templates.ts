@@ -91,6 +91,30 @@ export const TRIAL_TASK_WORKFLOW = {
   },
 } satisfies { name: string; graph: { nodes: unknown[]; edges: unknown[] } };
 
+// Starter graph for a brand-new workflow: Request-Inputs (top-left) + Response (right), both
+// non-deletable. Seeded at creation so every surface (detail page + canvas) shows them.
+const PRE_PLACED_GRAPH = {
+  nodes: [
+    {
+      id: "request-inputs",
+      type: "request-inputs",
+      position: { x: 80, y: 160 },
+      deletable: false,
+      data: { fields: [{ id: "text_field", name: "text_field", type: "text" }] },
+    },
+    {
+      id: "response",
+      type: "response",
+      position: { x: 920, y: 220 },
+      deletable: false,
+      data: {},
+    },
+  ],
+  edges: [],
+};
+
+export const prePlacedGraph = PRE_PLACED_GRAPH as unknown as Prisma.InputJsonValue;
+
 function edge(source: string, sourceHandle: string, target: string, targetHandle: string) {
   return {
     id: `${source}.${sourceHandle}->${target}.${targetHandle}`,
