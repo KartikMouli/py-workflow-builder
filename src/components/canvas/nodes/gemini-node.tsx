@@ -15,6 +15,55 @@ const UPLOAD_INPUTS: { id: string; label: string; type: DataType }[] = [
   { id: "file", label: "File", type: "file" },
 ];
 
+// The provided Google AI key only authorizes one Gemini model, so every label maps to that
+// model at execution — the selector mirrors the reference's model picker without breaking runs.
+const MODELS: { label: string; api: string }[] = [
+  { label: "Gemini 3.1 Pro", api: "gemini-3-flash-preview" },
+  { label: "Gemini 3 Flash", api: "gemini-3-flash-preview" },
+  { label: "Gemini 2.5 Flash", api: "gemini-3-flash-preview" },
+];
+
+function ModelDropdown({ id, current }: { id: string; current: string }) {
+  const [open, setOpen] = useState(false);
+  const updateNodeData = useCanvasStore((s) => s.updateNodeData);
+  return (
+    <div className="nodrag relative">
+      <button
+        type="button"
+        aria-label="Select model"
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-1 rounded-md border border-gray-200 px-1.5 py-1 text-[11px] font-medium text-gray-600 hover:bg-gray-50"
+      >
+        <ChevronDown className="h-3 w-3 text-gray-400" />
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 top-7 z-20 w-40 overflow-hidden rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
+            {MODELS.map((m) => (
+              <button
+                key={m.label}
+                type="button"
+                onClick={() => {
+                  updateNodeData(id, { model: m.api, modelLabel: m.label });
+                  setOpen(false);
+                }}
+                className={`block w-full px-3 py-1.5 text-left text-xs ${
+                  m.label === current
+                    ? "bg-gray-50 font-medium text-gray-900"
+                    : "text-gray-600 hover:bg-gray-50"
+                }`}
+              >
+                {m.label}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 export function GeminiNodeView({ id, data, selected }: NodeProps<GeminiNode>) {
   const updateNodeData = useCanvasStore((s) => s.updateNodeData);
   const connected = useConnectedTargets(id);
@@ -23,16 +72,18 @@ export function GeminiNodeView({ id, data, selected }: NodeProps<GeminiNode>) {
   const outputResponse = useCanvasStore((s) => s.outputs[id]?.response) as string | undefined;
   const [settingsOpen, setSettingsOpen] = useState(false);
   const responseText = runState?.text ?? outputResponse;
+  const modelLabel = data.modelLabel ?? "Gemini 3.1 Pro";
 
   return (
     <NodeFrame
-      title="Gemini 3 Flash"
-      info="Generate text with Google's Gemini 3 Flash. Connect a prompt and optional image, video, or audio."
+      title={modelLabel}
+      info="Generate text with Google's Gemini. Connect a prompt and optional image, video, or audio."
       menuNodeId={id}
       selected={selected}
       showRun
       width={300}
       cost={0.0025}
+      headerAction={<ModelDropdown id={id} current={modelLabel} />}
       runStatus={liveRun ? (runState?.status as RunPhase | undefined) : undefined}
     >
       <div className="space-y-3">

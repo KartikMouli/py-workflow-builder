@@ -34,19 +34,27 @@ function ToolbarButton({
   );
 }
 
+const CATEGORIES = ["Recent", "Image", "Video", "Audio", "Others"] as const;
+type Category = (typeof CATEGORIES)[number];
+
 const ITEMS: {
   key: string;
   label: string;
-  category: string;
+  category: Exclude<Category, "Recent">;
   create: (p: { x: number; y: number }) => AppNode;
 }[] = [
   { key: "crop-image", label: "Crop Image", category: "Image", create: createCropImageNode },
-  { key: "gemini", label: "Gemini 3 Flash", category: "LLM", create: createGeminiNode },
+  { key: "gemini", label: "Gemini 3.1 Pro", category: "Others", create: createGeminiNode },
 ];
+
+function itemsFor(category: Category) {
+  return category === "Recent" ? ITEMS : ITEMS.filter((i) => i.category === category);
+}
 
 export function NodePicker() {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [category, setCategory] = useState<Category>("Recent");
   const addNode = useCanvasStore((s) => s.addNode);
   const { screenToFlowPosition } = useReactFlow();
 
@@ -60,8 +68,11 @@ export function NodePicker() {
     setQuery("");
   }
 
-  const filtered = ITEMS.filter((i) => i.label.toLowerCase().includes(query.toLowerCase()));
-  const categories = Array.from(new Set(filtered.map((i) => i.category)));
+  const trimmed = query.trim().toLowerCase();
+  // Search ignores the active category and matches across everything; otherwise the tab decides.
+  const visible = trimmed
+    ? ITEMS.filter((i) => i.label.toLowerCase().includes(trimmed))
+    : itemsFor(category);
 
   return (
     <div className="absolute bottom-6 left-1/2 z-10 -translate-x-1/2">
@@ -77,28 +88,41 @@ export function NodePicker() {
               className="flex-1 bg-transparent text-sm outline-none"
             />
           </div>
-          <div className="max-h-72 overflow-y-auto p-2">
-            {categories.map((cat) => (
-              <div key={cat} className="mb-1">
-                <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-gray-400">
+
+          {!trimmed && (
+            <div className="flex gap-1 overflow-x-auto border-b border-gray-100 px-2 py-2">
+              {CATEGORIES.map((cat) => (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setCategory(cat)}
+                  className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
+                    category === cat
+                      ? "bg-brand text-white"
+                      : "text-gray-500 hover:bg-gray-100"
+                  }`}
+                >
                   {cat}
-                </p>
-                {filtered
-                  .filter((i) => i.category === cat)
-                  .map((i) => (
-                    <button
-                      key={i.key}
-                      type="button"
-                      onClick={() => add(i.create)}
-                      className="block w-full rounded-md px-2 py-1.5 text-left text-sm text-gray-700 hover:bg-gray-50"
-                    >
-                      {i.label}
-                    </button>
-                  ))}
-              </div>
+                </button>
+              ))}
+            </div>
+          )}
+
+          <div className="max-h-72 overflow-y-auto p-2">
+            {visible.map((i) => (
+              <button
+                key={i.key}
+                type="button"
+                onClick={() => add(i.create)}
+                className="block w-full rounded-md px-2 py-1.5 text-left text-sm text-gray-700 hover:bg-gray-50"
+              >
+                {i.label}
+              </button>
             ))}
-            {filtered.length === 0 && (
-              <p className="px-2 py-3 text-center text-xs text-gray-400">No matches</p>
+            {visible.length === 0 && (
+              <p className="px-2 py-3 text-center text-xs text-gray-400">
+                {trimmed ? "No matches" : "Nothing in this category yet"}
+              </p>
             )}
           </div>
         </div>

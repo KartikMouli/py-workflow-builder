@@ -36,6 +36,7 @@ export type CropImageData = {
 export type GeminiSettings = { temperature: number; maxOutputTokens: number };
 export type GeminiData = {
   model: string;
+  modelLabel?: string;
   prompt?: string;
   systemPrompt?: string;
   imageUrl?: string;
@@ -133,7 +134,11 @@ export function createGeminiNode(position: { x: number; y: number }): GeminiNode
     id: genId("gemini"),
     type: "gemini",
     position,
-    data: { model: "gemini-3-flash-preview", settings: { temperature: 1, maxOutputTokens: 2048 } },
+    data: {
+      model: "gemini-3-flash-preview",
+      modelLabel: "Gemini 3.1 Pro",
+      settings: { temperature: 1, maxOutputTokens: 2048 },
+    },
   };
 }
 
