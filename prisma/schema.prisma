@@ -64,6 +64,7 @@ enum RunStatus {
   SUCCESS
   FAILED
   PARTIAL
+  CANCELED
 }
 
 enum NodeStatus {
