@@ -1,7 +1,7 @@
 import type { Prisma } from "@/generated/prisma/client";
 
 const PRODUCT_BRIEF =
-  "Product: Wireless Bluetooth Headphones, Features: Noise cancellation, 30 hour battery, Foldable design.";
+  "Product: Wireless Bluetooth Headphones. Features: Noise cancellation, 30-hour battery, foldable design.";
 
 const GEMINI_MODEL = "gemini-3-flash-preview";
 const SETTINGS = { temperature: 1, maxOutputTokens: 2048 };
@@ -67,7 +67,7 @@ export const TRIAL_TASK_WORKFLOW = {
         id: "crop-bottom",
         type: "crop-image",
         position: { x: 400, y: 720 },
-        data: { x: 0, y: 0, width: 50, height: 100 },
+        data: { x: 0, y: 0, width: 100, height: 50 },
       },
       {
         id: "response",
@@ -84,6 +84,7 @@ export const TRIAL_TASK_WORKFLOW = {
       edge("request-inputs", "image_field", "crop-top", "input-image"),
       edge("request-inputs", "image_field", "crop-bottom", "input-image"),
       edge("crop-top", "output-image", "gemini-post", "image"),
+      edge("crop-bottom", "output-image", "gemini-post", "image"),
       edge("crop-bottom", "output-image", "response", "result"),
       edge("gemini-post", "response", "response", "result"),
     ],
