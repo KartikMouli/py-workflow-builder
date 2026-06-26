@@ -1,36 +1,77 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Py — Galaxy.ai Workflow Builder Clone
 
-## Getting Started
+A pixel-faithful clone of the Galaxy.ai (Magica) LLM workflow builder. Build node-based
+workflows on a React Flow canvas, execute every node on Trigger.dev, and watch live progress
+with a pulsating glow driven by Trigger.dev Realtime.
 
-First, run the development server:
+Three pages only: Clerk sign-in/up, a Dashboard of the user's workflows, and the Workflow
+Canvas (sidebar + canvas + execution-history panel). Unauthenticated traffic is redirected
+straight to Clerk.
+
+## Stack
+
+Next.js 16 (App Router, TS strict) · PostgreSQL (Neon) + Prisma · Clerk · React Flow
+(`@xyflow/react`) · Trigger.dev v4 · Transloadit · FFmpeg (inside the Trigger.dev task) ·
+Tailwind v4 · Zustand · Zod · `@google/generative-ai` · Lucide React. Deployed on Vercel.
+
+## Getting started
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
+cp .env.example .env.local   # then fill in the values (see below)
+pnpm prisma migrate deploy   # apply migrations to your database
+pnpm dev                     # Next.js dev server
+npx trigger.dev@latest dev   # in a second terminal — runs node executions locally
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open <http://localhost:3000>.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Environment variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Variable | Purpose |
+| --- | --- |
+| `DATABASE_URL` / `DIRECT_URL` | Neon Postgres (pooled / direct for migrations) |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY` | Clerk auth |
+| `NEXT_PUBLIC_CLERK_SIGN_IN_URL` / `…SIGN_UP_URL` / `…FALLBACK_REDIRECT_URL` | Clerk routing |
+| `TRIGGER_PROJECT_ID`, `TRIGGER_SECRET_KEY` | Trigger.dev project + task auth |
+| `GOOGLE_GENERATIVE_AI_API_KEY` | Gemini (Google AI Studio) |
+| `TRANSLOADIT_KEY`, `TRANSLOADIT_SECRET`, `TRANSLOADIT_TEMPLATE_ID` | image uploads (signature auth) |
+| `NEXT_PUBLIC_CANDIDATE_LINKEDIN_URL` | logged once per page as `[Py] Candidate LinkedIn: <url>` |
 
-## Learn More
+## Architecture notes
 
-To learn more about Next.js, take a look at the following resources:
+**Execution = one Trigger.dev orchestrator task.** All node execution happens inside a single
+`run-workflow` Trigger.dev task ([`src/trigger/run-workflow.ts`](src/trigger/run-workflow.ts)),
+which schedules nodes through memoized per-node promises and native `Promise.all`. This is a
+deliberate choice: it guarantees true parallel fan-out — a node starts the instant *its* direct
+parents resolve and never blocks on unrelated siblings — and lets the live glow stream through a
+single run's `metadata`/`useRealtimeRun` channel. Spawning a separate child task per node and
+awaiting them would checkpoint the parent and serialize the parallel branches, defeating the #1
+requirement. Request-Inputs and Response are local-only (value resolution / result capture); only
+Gemini and Crop Image perform real work.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+**Crop Image** runs FFmpeg inside the task (Transloadit handles only the original upload) and
+**awaits ≥30s** (`CROP_MIN_WAIT_MS`) before returning, per the spec's mandatory delay.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+**Selective execution.** A node's Run button runs just that node (`SINGLE`); selecting 2+ nodes
+shows a "Run N selected nodes" bar (`PARTIAL`); the top bar runs the whole graph (`FULL`). Single
+and partial runs execute only the targeted nodes — a node depends only on parents that are
+themselves in the run set, so unselected upstream nodes are never re-run. Every run is persisted
+as a `Run` + per-node `NodeRun` rows (status, inputs used, output, duration, error).
 
-## Deploy on Vercel
+**Gemini model label.** The provided Google AI key only authorizes one Gemini model
+(`gemini-3-flash-preview`). To match the reference UI the node header presents a model selector
+defaulting to **Gemini 3.1 Pro**; every option resolves to the authorized model at execution.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Required sample workflow
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+A "Trial Task Workflow" matching the spec's marketing-post pipeline is pre-built in
+[`src/lib/templates.ts`](src/lib/templates.ts) and seeded via the dashboard's System Workflows
+card: Request-Inputs → two parallel crops + a 3-stage Gemini chain → Response, with the final
+Gemini receiving both crops on its Image (Vision) handle.
+
+## Deploy
+
+Deployed on Vercel. Set every environment variable above in the Vercel project, run
+`pnpm prisma migrate deploy` against the production database, and `npx trigger.dev@latest deploy`
+to ship the task to the Trigger.dev production environment.
