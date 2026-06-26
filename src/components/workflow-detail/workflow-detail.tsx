@@ -60,7 +60,7 @@ export function WorkflowDetail({
 
       <div className="min-h-0 flex-1 overflow-auto">
         {tab === "playground" && <PlaygroundTab workflowId={workflowId} graph={graph} />}
-        {tab === "api" && <ApiTab workflowId={workflowId} graph={graph} />}
+        {tab === "api" && <ApiTab />}
         {tab === "workflow" && <WorkflowTab workflowId={workflowId} graph={graph} />}
       </div>
     </div>

@@ -1,25 +1,16 @@
 "use client";
 
 import { Code2 } from "lucide-react";
-import type { AppEdge, AppNode } from "@/components/canvas/types";
 
-export function ApiTab({
-  workflowId,
-}: {
-  workflowId: string;
-  graph: { nodes: AppNode[]; edges: AppEdge[] };
-}) {
+export function ApiTab() {
   return (
     <div className="mx-auto max-w-6xl px-8 py-6">
-      <div className="rounded-2xl border border-gray-200 bg-white p-6">
-        <div className="flex items-center gap-2">
-          <Code2 className="h-4 w-4 text-gray-500" />
-          <h2 className="text-base font-semibold text-gray-900">API Endpoint</h2>
+      <div className="flex min-h-96 flex-col items-center justify-center rounded-2xl border border-gray-200 bg-white text-center">
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gray-100">
+          <Code2 className="h-6 w-6 text-gray-400" />
         </div>
-        <p className="mt-1 text-sm text-gray-500">Run this workflow programmatically.</p>
-        <div className="mt-4 rounded-lg bg-gray-900 px-4 py-3 font-mono text-xs text-gray-100">
-          <span className="text-green-400">POST</span> /api/workflows/{workflowId}/runs
-        </div>
+        <p className="mt-3 text-sm font-medium text-gray-600">API access</p>
+        <p className="mt-1 text-xs text-gray-400">Nothing here yet.</p>
       </div>
     </div>
   );
