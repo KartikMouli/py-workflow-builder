@@ -82,7 +82,7 @@ async function runGemini(
   model: string,
   prompt: string,
   systemPrompt: string | undefined,
-  imageUrl: string | undefined,
+  images: string[],
 ): Promise<string> {
   const key = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
   if (!key) throw new Error("Missing GOOGLE_GENERATIVE_AI_API_KEY");
@@ -94,8 +94,9 @@ async function runGemini(
   const parts: Array<{ text: string } | { inlineData: { mimeType: string; data: string } }> = [
     { text: prompt },
   ];
-  if (imageUrl) {
-    const { buffer, mime } = await loadImageBuffer(imageUrl);
+  // Vision accepts multiple images — every connection on the Image handle is attached.
+  for (const url of images) {
+    const { buffer, mime } = await loadImageBuffer(url);
     parts.push({ inlineData: { mimeType: mime, data: buffer.toString("base64") } });
   }
   const result = await generative.generateContent(parts);
@@ -105,10 +106,24 @@ async function runGemini(
 export const runWorkflowTask = task({
   id: "run-workflow",
   run: async (payload: RunWorkflowPayload) => {
+    const runStart = Date.now();
     const { dbRunId, nodes, edges } = payload;
     const nodeById = new Map(nodes.map((n) => [n.id, n]));
     const outputs: Record<string, NodeOutput> = {};
+    const nodeInputs: Record<string, NodeOutput> = {};
     const state: Record<string, NodeState> = {};
+
+    // Compact a value for the persisted "inputs used" record — large base64 blobs become a
+    // short tag so node-run rows stay small while still showing what fed each node.
+    const summarize = (v: unknown): unknown => {
+      if (typeof v === "string") {
+        if (v.startsWith("data:")) return `[${v.slice(5, v.indexOf(";")) || "binary"}]`;
+        if (v.startsWith("http")) return v;
+        return v.length > 400 ? `${v.slice(0, 400)}…` : v;
+      }
+      if (Array.isArray(v)) return v.map(summarize);
+      return v;
+    };
 
     // Serialize flushes so parallel branches don't race: concurrent metadata.flush()
     // calls can land out of order and drop a node's RUNNING frame. Each publish
@@ -132,19 +147,35 @@ export const runWorkflowTask = task({
       return fallback;
     }
 
+    // Collect every connection on a handle (vision accepts multiple); fall back to a manual value.
+    function resolveAll(nodeId: string, handleId: string, fallback: string | undefined): string[] {
+      const fromEdges = edges
+        .filter((e) => e.target === nodeId && e.targetHandle === handleId)
+        .map((e) => outputs[e.source]?.[e.sourceHandle ?? "default"])
+        .filter((v): v is string => typeof v === "string" && v !== "");
+      if (fromEdges.length) return fromEdges;
+      return fallback ? [fallback] : [];
+    }
+
     async function execNode(node: GraphNode): Promise<NodeOutput> {
       const data = node.data ?? {};
       switch (node.type) {
         case "request-inputs": {
-          const fields = (data.fields as Array<{ id: string; value?: string }>) ?? [];
-          return Object.fromEntries(fields.map((f) => [f.id, f.value ?? ""]));
+          const fields = (data.fields as Array<{ id: string; name?: string; value?: string }>) ?? [];
+          const out = Object.fromEntries(fields.map((f) => [f.id, f.value ?? ""]));
+          nodeInputs[node.id] = Object.fromEntries(
+            fields.map((f) => [f.name ?? f.id, summarize(f.value ?? "")]),
+          );
+          return out;
         }
         case "crop-image": {
           const image = resolveInput(node.id, "input-image", data.inputImageUrl) as string;
           if (!image) throw new Error("Crop Image has no input image");
           const num = (k: string, d: number) => Number(resolveInput(node.id, k, data[k] ?? d));
+          const [x, y, w, h] = [num("x", 0), num("y", 0), num("width", 100), num("height", 100)];
+          nodeInputs[node.id] = { "input-image": summarize(image), x, y, width: w, height: h };
           await delay(CROP_MIN_WAIT_MS);
-          const url = await cropImage(image, num("x", 0), num("y", 0), num("width", 100), num("height", 100));
+          const url = await cropImage(image, x, y, w, h);
           return { "output-image": url };
         }
         case "gemini": {
@@ -153,12 +184,17 @@ export const runWorkflowTask = task({
           const system = resolveInput(node.id, "system-prompt", data.systemPrompt) as
             | string
             | undefined;
-          const image = resolveInput(node.id, "image", data.imageUrl) as string | undefined;
+          const images = resolveAll(node.id, "image", data.imageUrl as string | undefined);
+          nodeInputs[node.id] = {
+            prompt: summarize(prompt),
+            ...(system ? { "system-prompt": summarize(system) } : {}),
+            ...(images.length ? { image: images.map(summarize) } : {}),
+          };
           const text = await runGemini(
             (data.model as string) ?? "gemini-3-flash-preview",
             prompt,
             system,
-            image,
+            images,
           );
           state[node.id] = { ...state[node.id], text };
           return { response: text };
@@ -169,6 +205,9 @@ export const runWorkflowTask = task({
           for (const e of incoming) {
             collected[e.source] = outputs[e.source]?.[e.sourceHandle ?? "default"];
           }
+          nodeInputs[node.id] = Object.fromEntries(
+            Object.entries(collected).map(([k, v]) => [k, summarize(v)]),
+          );
           const text = Object.values(collected)
             .filter((v): v is string => typeof v === "string" && !v.startsWith("data:"))
             .join("\n\n");
@@ -180,8 +219,14 @@ export const runWorkflowTask = task({
       }
     }
 
-    // SINGLE runs execute only the targeted node(s) — upstream nodes are not re-run.
-    const single = payload.scope === "SINGLE";
+    // SINGLE/PARTIAL runs execute only the targeted node(s) — a node depends only on parents
+    // that are themselves in the run set, so unselected upstream nodes are never re-run.
+    const scope = payload.scope ?? "FULL";
+    const targetSet = new Set(payload.targets ?? []);
+    function directParents(nodeId: string): string[] {
+      const all = [...new Set(edges.filter((e) => e.target === nodeId).map((e) => e.source))];
+      return scope === "FULL" ? all : all.filter((p) => targetSet.has(p));
+    }
     const memo = new Map<string, Promise<NodeOutput>>();
     function schedule(nodeId: string): Promise<NodeOutput> {
       const existing = memo.get(nodeId);
@@ -189,10 +234,7 @@ export const runWorkflowTask = task({
       const promise = (async () => {
         const node = nodeById.get(nodeId);
         if (!node) return {};
-        const parents = single
-          ? []
-          : [...new Set(edges.filter((e) => e.target === nodeId).map((e) => e.source))];
-        await Promise.all(parents.map(schedule));
+        await Promise.all(directParents(nodeId).map(schedule));
         const startedAt = Date.now();
         state[nodeId] = { ...state[nodeId], status: NodeStatus.RUNNING };
         await publish();
@@ -224,24 +266,30 @@ export const runWorkflowTask = task({
     const collectScope = (nodeId: string) => {
       if (scopeIds.has(nodeId)) return;
       scopeIds.add(nodeId);
-      if (!single) for (const e of edges) if (e.target === nodeId) collectScope(e.source);
+      for (const p of directParents(nodeId)) collectScope(p);
     };
     rootIds.forEach(collectScope);
     for (const id of scopeIds) state[id] = { status: NodeStatus.PENDING };
     await publish();
 
-    const settled = await Promise.allSettled(rootIds.map((id) => schedule(id)));
+    await Promise.allSettled(rootIds.map((id) => schedule(id)));
     await publishChain;
-    const failed = settled.some((s) => s.status === "rejected");
     const ranNodes = nodes.filter((n) => state[n.id]);
+
+    // Mixed outcomes → PARTIAL; all failed → FAILED; otherwise SUCCESS.
+    const statuses = ranNodes.map((n) => state[n.id]?.status);
+    const anyFailed = statuses.includes(NodeStatus.FAILED);
+    const anySucceeded = statuses.includes(NodeStatus.SUCCESS);
+    const runStatus = anyFailed
+      ? anySucceeded
+        ? RunStatus.PARTIAL
+        : RunStatus.FAILED
+      : RunStatus.SUCCESS;
 
     await prisma.$transaction([
       prisma.run.update({
         where: { id: dbRunId },
-        data: {
-          status: failed ? RunStatus.FAILED : RunStatus.SUCCESS,
-          finishedAt: new Date(),
-        },
+        data: { status: runStatus, finishedAt: new Date(), durationMs: Date.now() - runStart },
       }),
       prisma.nodeRun.createMany({
         data: ranNodes.map((n) => ({
@@ -249,6 +297,7 @@ export const runWorkflowTask = task({
           nodeId: n.id,
           nodeType: n.type ?? "unknown",
           status: state[n.id]?.status ?? NodeStatus.PENDING,
+          inputs: nodeInputs[n.id] as Prisma.InputJsonValue | undefined,
           output: outputs[n.id] as Prisma.InputJsonValue | undefined,
           error: state[n.id]?.error,
           durationMs: state[n.id]?.durationMs,
@@ -256,6 +305,6 @@ export const runWorkflowTask = task({
       }),
     ]);
 
-    return { ok: !failed, dbRunId };
+    return { ok: !anyFailed, dbRunId };
   },
 });

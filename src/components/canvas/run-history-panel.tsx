@@ -23,8 +23,15 @@ type NodeRunItem = {
   nodeType: string;
   status: NodeStatus;
   error: string | null;
+  inputs: Record<string, unknown> | null;
   output: Record<string, unknown> | null;
   durationMs: number | null;
+};
+
+const SCOPE_LABEL: Record<string, string> = {
+  FULL: "Full",
+  PARTIAL: "Partial",
+  SINGLE: "Single",
 };
 
 const STATUS_META: Record<string, { label: string; dot: string }> = {
@@ -38,7 +45,7 @@ const STATUS_META: Record<string, { label: string; dot: string }> = {
 const NODE_LABEL: Record<string, string> = {
   "request-inputs": "Request Inputs",
   "crop-image": "Crop Image",
-  gemini: "Gemini 3 Flash",
+  gemini: "Gemini 3.1 Pro",
   response: "Response",
 };
 
@@ -319,7 +326,10 @@ function RunRow({
           </div>
           <span className="pt-0.5 text-xs text-gray-400">{formatDateTime(run.startedAt)}</span>
         </div>
-        <p className="mt-1 pl-4.5 text-xs text-gray-400">Credits: {creditsLabel(run)}</p>
+        <p className="mt-1 pl-4.5 text-xs text-gray-400">
+          {SCOPE_LABEL[run.scope] ?? run.scope} · {fmtDuration(run.durationMs)} · Credits:{" "}
+          {creditsLabel(run)}
+        </p>
       </button>
 
       {open && (
@@ -349,12 +359,36 @@ function NodeRunRow({ nodeRun }: { nodeRun: NodeRunItem }) {
         </span>
         <span className="text-[11px] text-gray-400">{fmtDuration(nodeRun.durationMs)}</span>
       </div>
+      <NodeInputs inputs={nodeRun.inputs} />
       {nodeRun.error && (
         <p className="mt-1.5 rounded bg-red-50 px-2 py-1 text-[11px] leading-snug text-red-600">
           {nodeRun.error}
         </p>
       )}
       {!nodeRun.error && <NodeOutput nodeRun={nodeRun} />}
+    </div>
+  );
+}
+
+function fmtInputValue(v: unknown): string {
+  if (Array.isArray(v)) return v.map(fmtInputValue).join(", ");
+  if (v === null || v === undefined || v === "") return "—";
+  return String(v);
+}
+
+function NodeInputs({ inputs }: { inputs: Record<string, unknown> | null }) {
+  if (!inputs || Object.keys(inputs).length === 0) return null;
+  return (
+    <div className="mt-1.5 rounded bg-gray-50 px-2 py-1.5">
+      <p className="mb-0.5 text-[10px] font-medium uppercase tracking-wide text-gray-400">Inputs</p>
+      <div className="space-y-0.5">
+        {Object.entries(inputs).map(([k, v]) => (
+          <div key={k} className="flex gap-1.5 text-[11px] leading-snug">
+            <span className="shrink-0 font-medium text-gray-500">{k}:</span>
+            <span className="min-w-0 flex-1 truncate text-gray-600">{fmtInputValue(v)}</span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

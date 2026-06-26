@@ -50,7 +50,7 @@ type CanvasState = {
   setWorkflowId: (id: string) => void;
   showToast: (message: string) => void;
   dismissToast: () => void;
-  runWorkflow: (scope: "FULL" | "SINGLE", targets?: string[]) => Promise<void>;
+  runWorkflow: (scope: "FULL" | "PARTIAL" | "SINGLE", targets?: string[]) => Promise<void>;
   startLiveRun: (run: NonNullable<LiveRun>) => void;
   setRunStates: (states: Record<string, NodeRunState>) => void;
   setOutputs: (outputs: Record<string, Record<string, unknown>>) => void;
@@ -96,7 +96,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => {
       if (!checkConnection(connection, get().nodes, get().edges)) return;
       commit();
       const targetNode = get().nodes.find((n) => n.id === connection.target);
-      const base = allowsMultipleInputs(targetNode)
+      const base = allowsMultipleInputs(targetNode, connection.targetHandle)
         ? get().edges
         : get().edges.filter(
             (e) => !(e.target === connection.target && e.targetHandle === connection.targetHandle),
@@ -200,8 +200,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => {
 
     runWorkflow: async (scope, targets) => {
       const { nodes, edges, workflowId } = get();
-      const scopeNodes = targets ? nodes.filter((n) => targets.includes(n.id)) : nodes;
-      const error = validateRunInputs(scopeNodes, edges, scope);
+      const error = validateRunInputs(nodes, edges, scope, targets);
       if (error) {
         set({ toast: error });
         return;

@@ -8,7 +8,7 @@ import {
   ReactFlow,
   ReactFlowProvider,
 } from "@xyflow/react";
-import { Check, Loader2, TriangleAlert } from "lucide-react";
+import { Check, Loader2, Play, TriangleAlert } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CanvasControls, CanvasMinimap } from "./canvas-controls";
 import { CanvasTopBar } from "./canvas-top-bar";
@@ -202,6 +202,7 @@ export function WorkflowCanvas({
             onStop={stopRun}
             onHistory={() => setHistoryOpen((v) => !v)}
           />
+          <MultiSelectRunBar />
           <NodePicker />
           <CanvasToast />
           {liveRun && (
@@ -220,6 +221,29 @@ export function WorkflowCanvas({
         />
       </div>
     </ReactFlowProvider>
+  );
+}
+
+// Floating "run the current selection" action — appears when 2+ nodes are selected.
+// Single-node selection is already covered by each node's own Run button.
+function MultiSelectRunBar() {
+  const nodes = useCanvasStore((s) => s.nodes);
+  const runWorkflow = useCanvasStore((s) => s.runWorkflow);
+  const liveRun = useCanvasStore((s) => s.liveRun);
+  const runStarting = useCanvasStore((s) => s.runStarting);
+  const selectedIds = nodes.filter((n) => n.selected).map((n) => n.id);
+  if (selectedIds.length < 2 || liveRun || runStarting) return null;
+  return (
+    <div className="absolute left-1/2 top-4 z-20 -translate-x-1/2">
+      <button
+        type="button"
+        onClick={() => runWorkflow("PARTIAL", selectedIds)}
+        className="flex items-center gap-2 rounded-full bg-brand px-4 py-2 text-sm font-medium text-white shadow-lg hover:bg-brand-hover"
+      >
+        <Play className="h-4 w-4" />
+        Run {selectedIds.length} selected nodes
+      </button>
+    </div>
   );
 }
 
