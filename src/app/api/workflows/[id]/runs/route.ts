@@ -64,6 +64,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       startedAt: true,
       finishedAt: true,
       durationMs: true,
+      _count: { select: { nodeRuns: true } },
     },
   });
   return NextResponse.json({ runs });
