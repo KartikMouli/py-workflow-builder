@@ -115,7 +115,7 @@ export function PlaygroundTab({ workflowId, graph }: { workflowId: string; graph
   return (
     <div className="mx-auto max-w-6xl px-8 py-6">
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <section className="flex flex-col rounded-2xl border border-gray-200 bg-white p-6">
+        <section className="flex min-h-160 flex-col rounded-2xl border border-gray-200 bg-white p-6">
           <div className="flex items-start justify-between gap-3">
             <div>
               <h2 className="text-base font-semibold text-gray-900">Inputs</h2>
@@ -151,7 +151,7 @@ export function PlaygroundTab({ workflowId, graph }: { workflowId: string; graph
             type="button"
             onClick={onRun}
             disabled={running}
-            className="mt-6 flex items-center justify-center gap-2 rounded-xl bg-brand py-3.5 text-sm font-medium text-white shadow-sm hover:bg-brand-hover disabled:opacity-60"
+            className="mt-6 flex items-center justify-center gap-2 rounded-2xl bg-brand py-4 text-sm font-medium text-white shadow-sm hover:bg-brand-hover disabled:opacity-60"
           >
             {running ? (
               <>
@@ -160,17 +160,17 @@ export function PlaygroundTab({ workflowId, graph }: { workflowId: string; graph
               </>
             ) : (
               <>
-                <Play className="h-4 w-4 fill-current" />
+                <Play className="h-4 w-4" />
                 Run
               </>
             )}
           </button>
         </section>
 
-        <section className="rounded-2xl border border-gray-200 bg-white p-6">
+        <section className="flex min-h-160 flex-col rounded-2xl border border-gray-200 bg-white p-6">
           <h2 className="text-base font-semibold text-gray-900">Output</h2>
           <p className="mt-0.5 text-sm text-gray-500">Results from workflow execution</p>
-          <div className="mt-4 min-h-72">
+          <div className="mt-4 flex flex-1 flex-col">
             <OutputView running={running} outputs={outputs} />
           </div>
         </section>
@@ -246,7 +246,7 @@ function PlaygroundField({
 function OutputView({ running, outputs }: { running: boolean; outputs: OutputItem[] | null }) {
   if (running) {
     return (
-      <div className="flex h-full min-h-72 flex-col items-center justify-center gap-3 text-center">
+      <div className="flex h-full flex-1 flex-col items-center justify-center gap-3 text-center">
         <Loader2 className="h-8 w-8 animate-spin text-brand" />
         <p className="text-sm text-gray-500">Running the workflow…</p>
       </div>
@@ -254,7 +254,7 @@ function OutputView({ running, outputs }: { running: boolean; outputs: OutputIte
   }
   if (!outputs || outputs.length === 0) {
     return (
-      <div className="flex h-full min-h-72 flex-col items-center justify-center gap-2 text-center">
+      <div className="flex h-full flex-1 flex-col items-center justify-center gap-2 text-center">
         <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gray-100">
           <Play className="h-6 w-6 text-gray-300" />
         </div>

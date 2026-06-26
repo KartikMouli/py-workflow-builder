@@ -34,13 +34,13 @@ function RailTip({ label, children }: { label: string; children: ReactNode }) {
 
 const NAV: { label: string; icon: typeof Plus; href: string | null }[] = [
   { label: "New task", icon: Plus, href: null },
-  { label: "Search Task", icon: Search, href: null },
-  { label: "Task", icon: MessageSquare, href: null },
+  { label: "Search tasks", icon: Search, href: null },
+  { label: "Tasks", icon: MessageSquare, href: null },
   { label: "Projects", icon: FolderClosed, href: null },
   { label: "Library", icon: Library, href: null },
   { label: "Flow", icon: Workflow, href: "/dashboard" },
   { label: "Tools", icon: Boxes, href: null },
-  { label: "API / MCP", icon: BookOpen, href: null },
+  { label: "API and MCP", icon: BookOpen, href: null },
 ];
 
 export function AppSidebar() {
