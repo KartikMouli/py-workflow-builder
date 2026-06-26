@@ -25,6 +25,7 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
   const workflow = await updateWorkflow(userId, id, {
     name: parsed.data.name,
     graph: parsed.data.graph as unknown as Prisma.InputJsonValue | undefined,
+    thumbnail: parsed.data.thumbnail,
   });
   if (!workflow) return notFound();
   return NextResponse.json({ workflow });

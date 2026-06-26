@@ -32,9 +32,10 @@ export const updateWorkflowSchema = z
   .object({
     name: z.string().min(1).max(120).optional(),
     graph: graphSchema.optional(),
+    thumbnail: z.string().max(5_000_000).nullable().optional(),
   })
-  .refine((d) => d.name !== undefined || d.graph !== undefined, {
-    message: "Provide at least one of: name, graph",
+  .refine((d) => d.name !== undefined || d.graph !== undefined || d.thumbnail !== undefined, {
+    message: "Provide at least one of: name, graph, thumbnail",
   });
 
 export const importWorkflowSchema = z.object({
