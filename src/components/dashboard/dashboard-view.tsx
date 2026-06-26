@@ -36,7 +36,8 @@ export function DashboardView({ workflows }: { workflows: WorkflowListItem[] }) 
       });
       if (!res.ok) throw new Error("Create failed");
       const { workflow } = (await res.json()) as { workflow: { id: string } };
-      router.push(`/workflow/${workflow.id}`);
+      // Spec: "Create New Workflow → opens a blank canvas" (the editor, not the detail page).
+      router.push(`/workflow/${workflow.id}/edit`);
     } catch {
       setBusy(false);
       alert("Couldn't create the workflow. Please try again.");
