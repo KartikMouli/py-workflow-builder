@@ -13,11 +13,13 @@ export function CanvasTopBar({
   isRunning,
   onRun,
   onStop,
+  onHistory,
 }: {
   name: string;
   isRunning: boolean;
   onRun: () => void;
   onStop: () => void;
+  onHistory: () => void;
 }) {
   const nodes = useCanvasStore((s) => s.nodes);
   const estimate = useMemo(
@@ -79,6 +81,7 @@ export function CanvasTopBar({
         <button
           type="button"
           aria-label="Run history"
+          onClick={onHistory}
           className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 shadow-sm hover:bg-gray-50"
         >
           <Clock className="h-4 w-4" />

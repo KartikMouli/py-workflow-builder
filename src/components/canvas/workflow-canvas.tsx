@@ -19,6 +19,7 @@ import { GeminiNodeView } from "./nodes/gemini-node";
 import { RequestInputsNodeView } from "./nodes/request-inputs-node";
 import { ResponseNodeView } from "./nodes/response-node";
 import { StickyNoteNodeView } from "./nodes/sticky-note-node";
+import { RunHistoryPanel } from "./run-history-panel";
 import { RunSubscriber } from "./run-subscriber";
 import { useCanvasStore } from "./store";
 import { type AppEdge, type AppNode, createPrePlacedNodes } from "./types";
@@ -54,6 +55,7 @@ export function WorkflowCanvas({
   const setWorkflowId = useCanvasStore((s) => s.setWorkflowId);
   const clearLiveRun = useCanvasStore((s) => s.clearLiveRun);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [historyOpen, setHistoryOpen] = useState(false);
   const pendingBody = useRef<string | null>(null);
 
   const displayEdges = useMemo(
@@ -185,9 +187,16 @@ export function WorkflowCanvas({
           isRunning={!!liveRun}
           onRun={startRun}
           onStop={stopRun}
+          onHistory={() => setHistoryOpen((v) => !v)}
         />
         <NodePicker />
         <CanvasToast />
+        <RunHistoryPanel
+          open={historyOpen}
+          workflowId={workflowId}
+          activeRunId={liveRun?.dbRunId ?? null}
+          onClose={() => setHistoryOpen(false)}
+        />
         {liveRun && (
           <RunSubscriber
             triggerRunId={liveRun.triggerRunId}
