@@ -107,14 +107,19 @@ export function AppSidebar() {
     <aside className="flex h-full w-74 shrink-0 flex-col border-r border-gray-200 bg-sidebar">
       <div className="flex items-center justify-between px-5 py-4">
         <span className="text-2xl font-bold tracking-tight text-gray-900">Py</span>
-        <button
-          type="button"
-          aria-label="Collapse sidebar"
-          onClick={() => setCollapsed(true)}
-          className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-500 hover:bg-[#e6e6e6]"
-        >
-          <PanelLeftClose className="h-5 w-5" />
-        </button>
+        <div className="group relative">
+          <button
+            type="button"
+            aria-label="Collapse sidebar"
+            onClick={() => setCollapsed(true)}
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-500 hover:bg-[#e6e6e6]"
+          >
+            <PanelLeftClose className="h-5 w-5" />
+          </button>
+          <span className="pointer-events-none absolute right-0 top-full z-50 mt-1.5 hidden whitespace-nowrap rounded-md bg-gray-900 px-2 py-1 text-[11px] text-white shadow-lg group-hover:block">
+            Collapse sidebar
+          </span>
+        </div>
       </div>
 
       <nav className="flex-1 space-y-0.5 px-3">
