@@ -4,6 +4,8 @@ import { UserButton } from "@clerk/nextjs";
 import {
   BookOpen,
   Boxes,
+  ChevronDown,
+  ChevronUp,
   FolderClosed,
   Gift,
   Library,
@@ -44,6 +46,7 @@ const NAV: { label: string; icon: typeof Plus; href: string | null }[] = [
 export function AppSidebar() {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(true);
 
   if (collapsed) {
     return (
@@ -143,23 +146,41 @@ export function AppSidebar() {
         <p className="px-3 pt-6 text-center text-xs text-gray-400">No tasks yet</p>
       </nav>
 
-      <div className="space-y-2 p-3">
+      <div className="border-t border-gray-200 p-3">
         <button
           type="button"
-          className="flex w-full items-center justify-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+          aria-label={menuOpen ? "Hide menu" : "Show menu"}
+          aria-expanded={menuOpen}
+          onClick={() => setMenuOpen((v) => !v)}
+          className="flex w-full items-center justify-center rounded-lg py-1 text-gray-400 hover:bg-[#e6e6e6] hover:text-gray-600"
         >
-          <Settings className="h-4 w-4" />
-          Settings
+          {menuOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
         </button>
-        <button
-          type="button"
-          className="flex w-full items-center justify-center gap-2 rounded-full bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-hover"
-        >
-          <Gift className="h-4 w-4" />
-          Claim Offer
-        </button>
-        <div className="flex items-center gap-2 px-1 pt-1">
-          <UserButton showName />
+
+        {menuOpen && (
+          <div className="mt-2 space-y-2">
+            <button
+              type="button"
+              className="flex w-full items-center justify-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+            >
+              <Settings className="h-4 w-4" />
+              Settings
+            </button>
+            <button
+              type="button"
+              className="flex w-full items-center justify-center gap-2 rounded-full bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-hover"
+            >
+              <Gift className="h-4 w-4" />
+              Claim Offer
+            </button>
+          </div>
+        )}
+
+        <div className="flex items-center gap-2 px-1 pt-3">
+          <UserButton
+            showName
+            appearance={{ elements: { userButtonBox: { flexDirection: "row-reverse" } } }}
+          />
         </div>
       </div>
     </aside>
