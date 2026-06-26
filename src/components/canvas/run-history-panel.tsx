@@ -162,7 +162,7 @@ export function RunHistoryPanel({
   return (
     <aside className="flex h-full w-105 shrink-0 flex-col border-l border-gray-200 bg-white">
       <div className="flex items-center justify-between px-5 pb-4 pt-5">
-        <h2 className="text-base font-bold text-gray-900">Execution History</h2>
+        <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Execution History</h2>
         <button
           type="button"
           onClick={onClose}
