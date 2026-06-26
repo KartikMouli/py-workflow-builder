@@ -143,67 +143,69 @@ export function WorkflowCanvas({
 
   return (
     <ReactFlowProvider>
-      <div className="relative h-full bg-canvas">
-        <ReactFlow
-          nodes={nodes}
-          edges={displayEdges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
-          isValidConnection={isValidConnection}
-          deleteKeyCode={["Backspace", "Delete"]}
-          nodeTypes={nodeTypes}
-          fitView
-          proOptions={{ hideAttribution: true }}
-        >
-          <Background variant={BackgroundVariant.Dots} gap={20} size={1.5} color="#d4d4d8" />
-          <CanvasControls />
-          <CanvasMinimap />
-        </ReactFlow>
-        {saveState !== "idle" && (
-          <div className="absolute left-1/2 top-4 z-10 flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs shadow-sm">
-            {saveState === "saving" && (
-              <>
-                <Loader2 className="h-3.5 w-3.5 animate-spin text-gray-500" />
-                <span className="text-gray-500">Saving…</span>
-              </>
-            )}
-            {saveState === "saved" && (
-              <>
-                <Check className="h-3.5 w-3.5 text-green-600" />
-                <span className="font-medium text-green-600">Saved</span>
-              </>
-            )}
-            {saveState === "error" && (
-              <>
-                <TriangleAlert className="h-3.5 w-3.5 text-red-600" />
-                <span className="font-medium text-red-600">Save failed</span>
-              </>
-            )}
-          </div>
-        )}
-        <CanvasTopBar
-          name={name}
-          isRunning={!!liveRun}
-          onRun={startRun}
-          onStop={stopRun}
-          onHistory={() => setHistoryOpen((v) => !v)}
-        />
-        <NodePicker />
-        <CanvasToast />
+      <div className="flex h-full">
+        <div className="relative h-full min-w-0 flex-1 bg-canvas">
+          <ReactFlow
+            nodes={nodes}
+            edges={displayEdges}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
+            isValidConnection={isValidConnection}
+            deleteKeyCode={["Backspace", "Delete"]}
+            nodeTypes={nodeTypes}
+            fitView
+            proOptions={{ hideAttribution: true }}
+          >
+            <Background variant={BackgroundVariant.Dots} gap={20} size={1.5} color="#d4d4d8" />
+            <CanvasControls />
+            <CanvasMinimap />
+          </ReactFlow>
+          {saveState !== "idle" && (
+            <div className="absolute left-1/2 top-4 z-10 flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs shadow-sm">
+              {saveState === "saving" && (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin text-gray-500" />
+                  <span className="text-gray-500">Saving…</span>
+                </>
+              )}
+              {saveState === "saved" && (
+                <>
+                  <Check className="h-3.5 w-3.5 text-green-600" />
+                  <span className="font-medium text-green-600">Saved</span>
+                </>
+              )}
+              {saveState === "error" && (
+                <>
+                  <TriangleAlert className="h-3.5 w-3.5 text-red-600" />
+                  <span className="font-medium text-red-600">Save failed</span>
+                </>
+              )}
+            </div>
+          )}
+          <CanvasTopBar
+            name={name}
+            isRunning={!!liveRun}
+            onRun={startRun}
+            onStop={stopRun}
+            onHistory={() => setHistoryOpen((v) => !v)}
+          />
+          <NodePicker />
+          <CanvasToast />
+          {liveRun && (
+            <RunSubscriber
+              triggerRunId={liveRun.triggerRunId}
+              token={liveRun.token}
+              dbRunId={liveRun.dbRunId}
+            />
+          )}
+        </div>
         <RunHistoryPanel
           open={historyOpen}
           workflowId={workflowId}
           activeRunId={liveRun?.dbRunId ?? null}
           onClose={() => setHistoryOpen(false)}
         />
-        {liveRun && (
-          <RunSubscriber
-            triggerRunId={liveRun.triggerRunId}
-            token={liveRun.token}
-            dbRunId={liveRun.dbRunId}
-          />
-        )}
       </div>
     </ReactFlowProvider>
   );

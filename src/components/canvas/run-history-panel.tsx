@@ -1,20 +1,11 @@
 "use client";
 
-import {
-  AlertCircle,
-  CheckCircle2,
-  ChevronDown,
-  Clock,
-  Loader2,
-  Minus,
-  RotateCcw,
-  X,
-  XCircle,
-} from "lucide-react";
+import { AlertCircle, CheckCircle2, ChevronDown, Loader2, Minus, XCircle } from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
 
 type RunStatus = "RUNNING" | "SUCCESS" | "FAILED" | "PARTIAL";
 type NodeStatus = "PENDING" | "RUNNING" | "SUCCESS" | "FAILED" | "SKIPPED";
+type Filter = "ALL" | "RUNNING" | "SUCCESS" | "FAILED";
 
 type RunListItem = {
   id: string;
@@ -48,6 +39,13 @@ const NODE_LABEL: Record<string, string> = {
   gemini: "Gemini 3 Flash",
   response: "Response",
 };
+
+const FILTERS: { value: Filter; label: string }[] = [
+  { value: "ALL", label: "All" },
+  { value: "RUNNING", label: "Running" },
+  { value: "SUCCESS", label: "Success" },
+  { value: "FAILED", label: "Failed" },
+];
 
 function StatusIcon({ status }: { status: RunStatus | NodeStatus }) {
   switch (status) {
@@ -97,18 +95,18 @@ export function RunHistoryPanel({
   activeRunId: string | null;
   onClose: () => void;
 }) {
+  const [tab, setTab] = useState<"ui" | "api">("ui");
+  const [filter, setFilter] = useState<Filter>("ALL");
   const [runs, setRuns] = useState<RunListItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
-  const [reloadKey, setReloadKey] = useState(0);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [details, setDetails] = useState<Record<string, NodeRunItem[]>>({});
   const [detailLoading, setDetailLoading] = useState<string | null>(null);
 
-  // activeRunId flips on run start/finish; bumping reloadKey forces a manual refetch.
-  // Node-run rows are only written when a run finishes, so the epoch also keys the
-  // detail cache below — stale detail is bypassed without a reset effect.
-  const epoch = `${activeRunId ?? ""}:${reloadKey}`;
+  // activeRunId flips on run start/finish. Node-run rows are written only when a run
+  // finishes, so the epoch keys the detail cache below — stale detail is bypassed.
+  const epoch = activeRunId ?? "idle";
 
   useEffect(() => {
     if (!open) return;
@@ -159,45 +157,55 @@ export function RunHistoryPanel({
 
   if (!open) return null;
 
-  return (
-    <div className="absolute right-0 top-0 z-30 flex h-full w-[360px] flex-col border-l border-gray-200 bg-white shadow-xl">
-      <header className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
-        <div className="flex items-center gap-2">
-          <Clock className="h-4 w-4 text-gray-500" />
-          <span className="text-sm font-semibold text-gray-800">Run history</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            aria-label="Refresh"
-            onClick={() => setReloadKey((k) => k + 1)}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-gray-400 hover:bg-gray-100 hover:text-gray-700"
-          >
-            <RotateCcw className="h-3.5 w-3.5" />
-          </button>
-          <button
-            type="button"
-            aria-label="Close run history"
-            onClick={onClose}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-gray-400 hover:bg-gray-100 hover:text-gray-700"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-      </header>
+  const visible = tab === "ui" ? runs.filter((r) => filter === "ALL" || r.status === filter) : [];
 
-      <div className="flex-1 overflow-auto">
-        {loading ? (
-          <div className="flex items-center justify-center gap-2 py-10 text-xs text-gray-400">
+  return (
+    <aside className="flex h-full w-105 shrink-0 flex-col border-l border-gray-200 bg-white">
+      <div className="flex items-center justify-between px-5 pb-4 pt-5">
+        <h2 className="text-base font-bold text-gray-900">Execution History</h2>
+        <button
+          type="button"
+          onClick={onClose}
+          className="text-sm font-medium text-gray-600 hover:text-gray-900"
+        >
+          Close
+        </button>
+      </div>
+
+      <div className="px-4 pb-4">
+        <div className="flex rounded-xl border border-gray-200 bg-gray-50 p-1">
+          <TabButton active={tab === "ui"} onClick={() => setTab("ui")}>
+            UI Runs
+          </TabButton>
+          <TabButton active={tab === "api"} onClick={() => setTab("api")}>
+            API Runs
+          </TabButton>
+        </div>
+      </div>
+
+      <div className="border-t border-gray-200" />
+
+      <div className="flex items-center justify-between px-5 pb-3 pt-4">
+        <span className="text-sm font-medium text-gray-700">Run history</span>
+        <FilterDropdown value={filter} onChange={setFilter} />
+      </div>
+
+      <div className="flex-1 overflow-auto px-4 pb-4">
+        {tab === "ui" && loading ? (
+          <div className="flex items-center justify-center gap-2 py-8 text-sm text-gray-400">
             <Loader2 className="h-4 w-4 animate-spin" /> Loading runs…
           </div>
-        ) : error ? (
-          <div className="px-4 py-10 text-center text-xs text-red-500">Failed to load run history.</div>
-        ) : runs.length === 0 ? (
-          <div className="px-4 py-10 text-center text-xs text-gray-400">No runs yet.</div>
+        ) : tab === "ui" && error ? (
+          <div className="rounded-xl border border-gray-200 px-4 py-8 text-center text-sm text-red-500">
+            Failed to load run history.
+          </div>
+        ) : visible.length === 0 ? (
+          <div className="rounded-xl border border-gray-200 px-4 py-8 text-center text-sm text-gray-400">
+            No runs for this filter yet.
+          </div>
         ) : (
-          <ul className="divide-y divide-gray-100">
-            {runs.map((run) => {
+          <ul className="space-y-2">
+            {visible.map((run) => {
               const key = `${run.id}:${epoch}`;
               return (
                 <RunRow
@@ -213,6 +221,69 @@ export function RunHistoryPanel({
           </ul>
         )}
       </div>
+    </aside>
+  );
+}
+
+function TabButton({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex-1 rounded-lg py-2 text-sm font-medium transition-colors ${
+        active ? "bg-white text-gray-900 shadow-sm" : "text-gray-400 hover:text-gray-600"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function FilterDropdown({ value, onChange }: { value: Filter; onChange: (f: Filter) => void }) {
+  const [open, setOpen] = useState(false);
+  const label = FILTERS.find((f) => f.value === value)?.label ?? "All";
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+      >
+        {label}
+        <ChevronDown className="h-3.5 w-3.5 text-gray-400" />
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 top-9 z-20 w-32 overflow-hidden rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
+            {FILTERS.map((f) => (
+              <button
+                key={f.value}
+                type="button"
+                onClick={() => {
+                  onChange(f.value);
+                  setOpen(false);
+                }}
+                className={`block w-full px-3 py-1.5 text-left text-xs ${
+                  f.value === value
+                    ? "bg-gray-50 font-medium text-gray-900"
+                    : "text-gray-600 hover:bg-gray-50"
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -231,11 +302,11 @@ function RunRow({
   loading: boolean;
 }) {
   return (
-    <li>
+    <li className="overflow-hidden rounded-xl border border-gray-200">
       <button
         type="button"
         onClick={onToggle}
-        className="flex w-full items-center gap-2.5 px-4 py-3 text-left hover:bg-gray-50"
+        className="flex w-full items-center gap-2.5 px-3.5 py-3 text-left hover:bg-gray-50"
       >
         <StatusIcon status={run.status} />
         <div className="min-w-0 flex-1">
@@ -254,13 +325,13 @@ function RunRow({
       </button>
 
       {open && (
-        <div className="space-y-1.5 bg-gray-50/60 px-4 pb-3 pt-1">
+        <div className="space-y-1.5 border-t border-gray-100 bg-gray-50/60 px-3.5 py-3">
           {loading ? (
-            <div className="flex items-center gap-2 py-2 text-xs text-gray-400">
+            <div className="flex items-center gap-2 py-1 text-xs text-gray-400">
               <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading…
             </div>
           ) : !nodeRuns || nodeRuns.length === 0 ? (
-            <div className="py-2 text-xs text-gray-400">No node runs recorded.</div>
+            <div className="py-1 text-xs text-gray-400">No node runs recorded.</div>
           ) : (
             nodeRuns.map((nr) => <NodeRunRow key={nr.id} nodeRun={nr} />)
           )}
