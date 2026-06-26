@@ -23,6 +23,7 @@ export function CanvasTopBar({
 }) {
   const nodes = useCanvasStore((s) => s.nodes);
   const liveRun = useCanvasStore((s) => s.liveRun);
+  const workflowId = useCanvasStore((s) => s.workflowId);
   const estimate = useMemo(
     () => nodes.reduce((sum, n) => sum + (NODE_COST_M[n.type ?? ""] ?? 0), 0),
     [nodes],
@@ -32,7 +33,7 @@ export function CanvasTopBar({
     <>
       <div className="absolute left-4 top-4 z-10 flex items-center gap-2 rounded-full border border-gray-200 bg-white py-1.5 pl-2 pr-4 shadow-sm">
         <Link
-          href="/dashboard"
+          href={workflowId ? `/workflow/${workflowId}` : "/dashboard"}
           className="flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-100"
         >
           <ArrowLeft className="h-4 w-4" />
