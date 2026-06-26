@@ -46,13 +46,13 @@ export function CanvasTopBar({
             {liveRun && <span className="text-gray-400">{liveRun.dbRunId.slice(0, 8)}…</span>}
           </span>
         )}
-        <span className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs shadow-sm">
+        <span className="flex h-7 items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 text-xs shadow-sm">
           <Calculator className="h-3.5 w-3.5 text-gray-400" />
           <span className="text-gray-500">Est</span>
           <span className="font-semibold text-gray-900">{estimate.toFixed(2)}</span>
           <span className="text-gray-400">M</span>
         </span>
-        <span className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs shadow-sm">
+        <span className="flex h-7 items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 text-xs shadow-sm">
           <Wallet className="h-3.5 w-3.5 text-gray-400" />
           <span className="text-gray-500">Bal</span>
           <span className="font-semibold text-gray-900">0.00</span>
