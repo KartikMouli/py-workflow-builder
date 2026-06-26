@@ -1,9 +1,5 @@
 @import "tailwindcss";
 
-/* Drive `dark:` from a `.dark` class instead of the OS setting. The app is light-only,
-   so these variants stay inert and never flip text/background colors under a dark OS. */
-@custom-variant dark (&:where(.dark, .dark *));
-
 :root {
   --background: #ffffff;
   --foreground: #1f2024;
