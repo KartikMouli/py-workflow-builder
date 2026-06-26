@@ -1,6 +1,6 @@
 "use client";
 
-import { Import, Plus, Search, Workflow } from "lucide-react";
+import { Plus, Search, Upload, Workflow } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { type ChangeEvent, type ReactNode, useRef, useState } from "react";
 import { WorkflowCard } from "./workflow-card";
@@ -113,9 +113,9 @@ export function DashboardView({ workflows }: { workflows: WorkflowListItem[] }) 
               type="button"
               onClick={() => fileInput.current?.click()}
               disabled={busy}
-              className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              className="flex h-9 items-center gap-2 rounded-lg bg-gray-100 px-3.5 text-sm font-medium text-gray-700 hover:bg-gray-200 disabled:opacity-50"
             >
-              <Import className="h-4 w-4" />
+              <Upload className="h-4 w-4" />
               Import
             </button>
             <button
@@ -123,7 +123,7 @@ export function DashboardView({ workflows }: { workflows: WorkflowListItem[] }) 
               onClick={() => createWorkflow()}
               disabled={busy}
               aria-label="New workflow"
-              className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand text-white hover:bg-brand-hover disabled:opacity-50"
+              className="flex h-9 w-9 items-center justify-center rounded-lg bg-neutral-800 text-white hover:bg-neutral-700 disabled:opacity-50"
             >
               <Plus className="h-4 w-4" />
             </button>
