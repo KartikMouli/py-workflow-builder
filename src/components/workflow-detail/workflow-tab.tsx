@@ -62,8 +62,8 @@ function WorkflowPreview({ graph }: { graph: Graph }) {
 
 export function WorkflowTab({ workflowId, graph }: { workflowId: string; graph: Graph }) {
   return (
-    <div className="h-full p-6">
-      <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white">
+    <div className="h-full overflow-hidden p-4 sm:p-6 sm:pl-16">
+      <div className="flex h-full flex-col overflow-hidden rounded-[18px] border border-gray-200 bg-white shadow-sm">
         <div className="flex items-center justify-between px-6 py-4">
           <h2 className="text-lg font-semibold text-gray-900">Workflow Structure</h2>
           <Link

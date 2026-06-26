@@ -65,8 +65,8 @@ export function RunHistoryTable({
       : runs.filter((r) => r.id.toLowerCase().includes(query.trim().toLowerCase()));
 
   return (
-    <section className="mt-6 rounded-2xl border border-gray-200 bg-white p-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <section className="mt-6 overflow-hidden rounded-[18px] border border-gray-200 bg-white shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-5 py-4">
         <div className="flex items-center gap-2">
           <Clock className="h-4 w-4 text-gray-500" />
           <h2 className="text-base font-semibold text-gray-900">Run History</h2>
@@ -93,7 +93,7 @@ export function RunHistoryTable({
         </div>
       </div>
 
-      <div className="mt-5">
+      <div className="px-5 py-4">
         <div className="grid grid-cols-[1.4fr_1fr_1fr_1.4fr] gap-4 border-b border-gray-100 pb-2 text-xs font-medium text-gray-500">
           <span>Date &amp; Time</span>
           <span>Status</span>

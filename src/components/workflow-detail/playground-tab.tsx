@@ -113,22 +113,22 @@ export function PlaygroundTab({ workflowId, graph }: { workflowId: string; graph
   }, []);
 
   return (
-    <div className="px-8 py-6">
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_3fr]">
-        <section className="flex min-h-160 flex-col rounded-2xl border border-gray-200 bg-white p-6">
-          <div className="flex items-start justify-between gap-3">
+    <div className="relative h-full overflow-y-auto p-4 sm:p-6 sm:pl-16">
+      <div className="grid h-[72vh] grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-[480px_1fr]">
+        <section className="flex h-full flex-col overflow-hidden rounded-[18px] border border-gray-200 bg-white shadow-sm">
+          <div className="flex flex-row items-center justify-between space-y-0 px-5 py-4">
             <div>
               <h2 className="text-base font-semibold text-gray-900">Inputs</h2>
               <p className="mt-0.5 text-sm text-gray-500">
                 Configure the input fields for this workflow run
               </p>
             </div>
-            <span className="shrink-0 rounded-md bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-500">
+            <span className="shrink-0 rounded-md bg-gray-100 px-2 py-1 text-[11px] text-gray-500">
               Est. ~{estimate.toFixed(2)} M
             </span>
           </div>
 
-          <div className="mt-6 flex-1 space-y-5">
+          <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-5">
             {fields.length === 0 ? (
               <p className="text-sm text-gray-400">This workflow has no inputs.</p>
             ) : (
@@ -143,34 +143,37 @@ export function PlaygroundTab({ workflowId, graph }: { workflowId: string; graph
             )}
           </div>
 
-          {error && (
-            <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{error}</p>
-          )}
-
-          <button
-            type="button"
-            onClick={onRun}
-            disabled={running}
-            className="mt-6 flex items-center justify-center gap-2 rounded-2xl bg-brand py-4 text-sm font-medium text-white shadow-sm hover:bg-brand-hover disabled:opacity-60"
-          >
-            {running ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Running…
-              </>
-            ) : (
-              <>
-                <Play className="h-4 w-4" />
-                Run
-              </>
+          <div className="px-5 pb-5">
+            {error && (
+              <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{error}</p>
             )}
-          </button>
+            <button
+              type="button"
+              onClick={onRun}
+              disabled={running}
+              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-brand py-4 text-sm font-medium text-white shadow-sm hover:bg-brand-hover disabled:opacity-60"
+            >
+              {running ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Running…
+                </>
+              ) : (
+                <>
+                  <Play className="h-4 w-4" />
+                  Run
+                </>
+              )}
+            </button>
+          </div>
         </section>
 
-        <section className="flex min-h-160 flex-col rounded-2xl border border-gray-200 bg-white p-6">
-          <h2 className="text-base font-semibold text-gray-900">Output</h2>
-          <p className="mt-0.5 text-sm text-gray-500">Results from workflow execution</p>
-          <div className="mt-4 flex flex-1 flex-col">
+        <section className="flex h-full flex-col overflow-hidden rounded-[18px] border border-gray-200 bg-white shadow-sm">
+          <div className="px-5 py-4">
+            <h2 className="text-base font-semibold text-gray-900">Output</h2>
+            <p className="mt-0.5 text-sm text-gray-500">Results from workflow execution</p>
+          </div>
+          <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
             <OutputView running={running} outputs={outputs} />
           </div>
         </section>

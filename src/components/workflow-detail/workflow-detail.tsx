@@ -30,7 +30,7 @@ export function WorkflowDetail({
 
   return (
     <div className="flex h-full flex-col overflow-hidden bg-canvas">
-      <header className="flex items-center gap-3 px-8 pt-6">
+      <header className="flex items-center gap-3 pb-3 pl-15 pr-15 pt-8">
         <Link
           href="/dashboard"
           aria-label="Back to flows"
@@ -41,13 +41,13 @@ export function WorkflowDetail({
         <h1 className="text-xl font-semibold text-gray-900">{name}</h1>
       </header>
 
-      <nav className="mt-4 flex items-center gap-6 border-b border-gray-200 px-8">
+      <nav className="flex items-center gap-6 border-b border-gray-200 pl-15 pr-15 pt-3">
         {TABS.map((t) => (
           <button
             key={t.id}
             type="button"
             onClick={() => setTab(t.id)}
-            className={`-mb-px border-b-2 pb-3 text-sm transition-colors ${
+            className={`-mb-px border-b-2 py-2.5 text-sm transition-colors ${
               tab === t.id
                 ? "border-gray-900 font-medium text-gray-900"
                 : "border-transparent text-gray-400 hover:text-gray-600"
@@ -58,7 +58,7 @@ export function WorkflowDetail({
         ))}
       </nav>
 
-      <div className="min-h-0 flex-1 overflow-auto">
+      <div className="min-h-0 flex-1 overflow-hidden">
         {tab === "playground" && <PlaygroundTab workflowId={workflowId} graph={graph} />}
         {tab === "api" && <ApiTab />}
         {tab === "workflow" && <WorkflowTab workflowId={workflowId} graph={graph} />}
