@@ -5,7 +5,12 @@ import { useRouter } from "next/navigation";
 import { type ChangeEvent, type ReactNode, useRef, useState } from "react";
 import { WorkflowCard } from "./workflow-card";
 
-export type WorkflowListItem = { id: string; name: string; updatedAt: string };
+export type WorkflowListItem = {
+  id: string;
+  name: string;
+  thumbnail?: string | null;
+  updatedAt: string;
+};
 
 export function DashboardView({ workflows }: { workflows: WorkflowListItem[] }) {
   const router = useRouter();
@@ -66,6 +71,42 @@ export function DashboardView({ workflows }: { workflows: WorkflowListItem[] }) 
       router.refresh();
     } catch {
       alert("Import failed — that file isn't a valid workflow JSON.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function duplicateWorkflow(id: string) {
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/workflows/${id}/duplicate`, { method: "POST" });
+      if (!res.ok) throw new Error("Duplicate failed");
+      router.refresh();
+    } catch {
+      alert("Couldn't duplicate the workflow. Please try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function exportWorkflow(id: string) {
+    const a = document.createElement("a");
+    a.href = `/api/workflows/${id}/export`;
+    a.rel = "noopener";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+
+  async function setThumbnail(id: string, thumbnail: string) {
+    setBusy(true);
+    try {
+      await fetch(`/api/workflows/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ thumbnail }),
+      });
+      router.refresh();
     } finally {
       setBusy(false);
     }
@@ -206,7 +247,10 @@ export function DashboardView({ workflows }: { workflows: WorkflowListItem[] }) 
                     setRenameTarget(w);
                     setRenameValue(w.name);
                   }}
+                  onDuplicate={() => duplicateWorkflow(w.id)}
+                  onExport={() => exportWorkflow(w.id)}
                   onDelete={() => setDeleteTarget(w)}
+                  onThumbnail={(dataUrl) => setThumbnail(w.id, dataUrl)}
                 />
               ))}
             </div>

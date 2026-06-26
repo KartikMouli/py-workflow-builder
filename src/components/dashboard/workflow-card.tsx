@@ -1,31 +1,76 @@
 "use client";
 
-import { MoreHorizontal, Pencil, Trash2, Workflow } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import {
+  Copy,
+  Download,
+  ImagePlus,
+  MoreVertical,
+  Pencil,
+  SquareArrowOutUpRight,
+  Trash2,
+  Workflow,
+} from "lucide-react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import type { WorkflowListItem } from "./dashboard-view";
 
 function formatEdited(iso: string) {
-  return `Edited ${new Date(iso).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    timeZone: "UTC",
-  })}`;
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60_000);
+  if (mins < 1) return "Edited just now";
+  if (mins < 60) return `Edited ${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `Edited ${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `Edited ${days}d ago`;
+  return `Edited ${Math.floor(days / 7)}w ago`;
+}
+
+async function fileToThumbnail(file: File): Promise<string> {
+  const dataUrl = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+  const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const el = new Image();
+    el.onload = () => resolve(el);
+    el.onerror = reject;
+    el.src = dataUrl;
+  });
+  const maxW = 480;
+  const scale = Math.min(1, maxW / img.width);
+  const w = Math.round(img.width * scale);
+  const h = Math.round(img.height * scale);
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return dataUrl;
+  ctx.drawImage(img, 0, 0, w, h);
+  return canvas.toDataURL("image/jpeg", 0.82);
 }
 
 export function WorkflowCard({
   workflow,
   onOpen,
   onRename,
+  onDuplicate,
+  onExport,
   onDelete,
+  onThumbnail,
 }: {
   workflow: WorkflowListItem;
   onOpen: () => void;
   onRename: () => void;
+  onDuplicate: () => void;
+  onExport: () => void;
   onDelete: () => void;
+  onThumbnail: (dataUrl: string) => void;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -38,57 +83,126 @@ export function WorkflowCard({
     return () => document.removeEventListener("mousedown", onClick);
   }, [menuOpen]);
 
+  async function onPickThumbnail(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    try {
+      onThumbnail(await fileToThumbnail(file));
+    } catch {
+      // ignore unreadable images
+    }
+  }
+
   return (
-    <div className="group relative flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-white hover:border-brand/40 hover:shadow-sm">
+    <div className="group relative flex flex-col rounded-2xl border border-gray-200 bg-white p-2 transition-shadow hover:shadow-md">
+      <div className="relative aspect-16/10 overflow-hidden rounded-xl bg-gray-100">
+        <button
+          type="button"
+          onClick={onOpen}
+          aria-label={`Open ${workflow.name}`}
+          className="absolute inset-0 h-full w-full"
+        >
+          {workflow.thumbnail ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={workflow.thumbnail}
+              alt=""
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <span className="flex h-full w-full items-center justify-center">
+              <Workflow className="h-8 w-8 text-gray-400" />
+            </span>
+          )}
+        </button>
+      </div>
+
       <button
         type="button"
-        onClick={onOpen}
-        className="flex h-28 items-center justify-center bg-gray-100"
+        onClick={() => fileRef.current?.click()}
+        aria-label="Edit thumbnail"
+        className="absolute left-4 top-4 flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-white/90 text-gray-600 opacity-0 shadow-sm backdrop-blur transition-opacity hover:bg-white hover:text-gray-900 group-hover:opacity-100"
       >
-        <Workflow className="h-8 w-8 text-gray-400" />
+        <ImagePlus className="h-4 w-4" />
       </button>
-      <div className="flex items-center justify-between gap-2 px-3 py-2">
-        <button type="button" onClick={onOpen} className="min-w-0 flex-1 text-left">
-          <p className="truncate text-sm font-medium text-gray-800">{workflow.name}</p>
-          <p className="mt-0.5 text-xs text-gray-400">{formatEdited(workflow.updatedAt)}</p>
+
+      <div ref={menuRef} className="absolute right-4 top-4">
+        <button
+          type="button"
+          onClick={() => setMenuOpen((v) => !v)}
+          aria-label="Workflow actions"
+          className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-white/90 text-gray-600 opacity-0 shadow-sm backdrop-blur transition-opacity hover:bg-white hover:text-gray-900 group-hover:opacity-100 data-[open=true]:opacity-100"
+          data-open={menuOpen}
+        >
+          <MoreVertical className="h-4 w-4" />
         </button>
-        <div ref={menuRef} className="relative">
-          <button
-            type="button"
-            onClick={() => setMenuOpen((v) => !v)}
-            aria-label="Workflow actions"
-            className="rounded-md p-1.5 text-gray-400 opacity-0 hover:bg-gray-100 hover:text-gray-700 group-hover:opacity-100"
-          >
-            <MoreHorizontal className="h-4 w-4" />
-          </button>
-          {menuOpen && (
-            <div className="absolute right-0 top-9 z-10 w-36 overflow-hidden rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
-              <button
-                type="button"
-                onClick={() => {
-                  setMenuOpen(false);
-                  onRename();
-                }}
-                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
-              >
-                <Pencil className="h-3.5 w-3.5" />
-                Rename
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setMenuOpen(false);
-                  onDelete();
-                }}
-                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-                Delete
-              </button>
-            </div>
-          )}
-        </div>
+        {menuOpen && (
+          <div className="absolute right-0 top-10 z-30 w-44 overflow-hidden rounded-xl border border-gray-200 bg-white py-1.5 shadow-xl">
+            <MenuItem icon={<SquareArrowOutUpRight className="h-4 w-4" />} onClick={() => run(setMenuOpen, onOpen)}>
+              Open
+            </MenuItem>
+            <MenuItem icon={<Pencil className="h-4 w-4" />} onClick={() => run(setMenuOpen, onRename)}>
+              Rename
+            </MenuItem>
+            <MenuItem icon={<Copy className="h-4 w-4" />} onClick={() => run(setMenuOpen, onDuplicate)}>
+              Duplicate
+            </MenuItem>
+            <MenuItem icon={<Download className="h-4 w-4" />} onClick={() => run(setMenuOpen, onExport)}>
+              Export JSON
+            </MenuItem>
+            <div className="my-1 h-px bg-gray-100" />
+            <MenuItem danger icon={<Trash2 className="h-4 w-4" />} onClick={() => run(setMenuOpen, onDelete)}>
+              Delete
+            </MenuItem>
+          </div>
+        )}
       </div>
+
+      <button type="button" onClick={onOpen} className="px-1 pb-1 pt-2.5 text-left">
+        <p className="truncate text-sm font-medium text-gray-900">{workflow.name}</p>
+        <p className="mt-0.5 text-xs text-gray-400" suppressHydrationWarning>
+          {formatEdited(workflow.updatedAt)}
+        </p>
+      </button>
+
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*"
+        hidden
+        onChange={onPickThumbnail}
+      />
     </div>
+  );
+}
+
+function run(setMenuOpen: (v: boolean) => void, fn: () => void) {
+  setMenuOpen(false);
+  fn();
+}
+
+function MenuItem({
+  icon,
+  children,
+  onClick,
+  danger,
+}: {
+  icon: ReactNode;
+  children: ReactNode;
+  onClick: () => void;
+  danger?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm ${
+        danger ? "text-red-600 hover:bg-red-50" : "text-gray-700 hover:bg-gray-50"
+      }`}
+    >
+      {icon}
+      {children}
+    </button>
   );
 }

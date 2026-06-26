@@ -8,6 +8,7 @@ export default async function DashboardPage() {
   const workflows = rows.map((w) => ({
     id: w.id,
     name: w.name,
+    thumbnail: w.thumbnail,
     updatedAt: w.updatedAt.toISOString(),
   }));
   return <DashboardView workflows={workflows} />;
