@@ -1,5 +1,5 @@
 import { Handle, Position } from "@xyflow/react";
-import { Info, MoreHorizontal, Play, RotateCcw } from "lucide-react";
+import { Info, Loader2, MoreHorizontal, Play, RotateCcw } from "lucide-react";
 import { type CSSProperties, type ReactNode, useState } from "react";
 import { useCanvasStore } from "../store";
 import { type DataType, TYPE_COLOR } from "../types";
@@ -108,7 +108,7 @@ export function NodeFrame({
   );
   const runWorkflow = useCanvasStore((s) => s.runWorkflow);
   const ring = running
-    ? "border-brand shadow-[0_0_0_3px_rgba(96,88,232,0.35)] animate-pulse"
+    ? "border-brand animate-node-glow"
     : selected
       ? "border-brand ring-2 ring-brand/30"
       : "border-gray-200";
@@ -123,7 +123,13 @@ export function NodeFrame({
         {info && <InfoHint text={info} />}
         <div className="flex-1" />
         {headerAction}
-        {showRun && (
+        {running && (
+          <span className="nodrag flex items-center gap-1.5 rounded-md bg-brand/10 px-2.5 py-1.5 text-xs font-medium text-brand">
+            <Loader2 className="h-3 w-3 animate-spin" />
+            Running
+          </span>
+        )}
+        {showRun && !running && (
           <>
             <button
               type="button"

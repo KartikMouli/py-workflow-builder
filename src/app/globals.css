@@ -24,3 +24,18 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
 }
+
+/* Soft breathing glow for a node while it is executing (no content dimming). */
+@keyframes node-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 1px rgba(96, 88, 232, 0.55), 0 0 14px 2px rgba(96, 88, 232, 0.22);
+  }
+  50% {
+    box-shadow: 0 0 0 1.5px rgba(96, 88, 232, 0.85), 0 0 24px 5px rgba(96, 88, 232, 0.42);
+  }
+}
+
+.animate-node-glow {
+  animation: node-glow 1.6s ease-in-out infinite;
+}

@@ -9,7 +9,7 @@ import {
   ReactFlowProvider,
 } from "@xyflow/react";
 import { Check, Loader2, TriangleAlert } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { CanvasControls, CanvasMinimap } from "./canvas-controls";
 import { CanvasTopBar } from "./canvas-top-bar";
 import { serializeGraph } from "./graph";
@@ -57,11 +57,6 @@ export function WorkflowCanvas({
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [historyOpen, setHistoryOpen] = useState(false);
   const pendingBody = useRef<string | null>(null);
-
-  const displayEdges = useMemo(
-    () => (liveRun ? edges.map((e) => ({ ...e, animated: true })) : edges),
-    [edges, liveRun],
-  );
 
   const startRun = useCallback(() => runWorkflow("FULL"), [runWorkflow]);
 
@@ -147,7 +142,7 @@ export function WorkflowCanvas({
         <div className="relative h-full min-w-0 flex-1 bg-canvas">
           <ReactFlow
             nodes={nodes}
-            edges={displayEdges}
+            edges={edges}
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
