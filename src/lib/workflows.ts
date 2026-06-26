@@ -1,4 +1,4 @@
-import { Prisma } from "@/generated/prisma/client";
+import { Prisma, RunStatus } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { prePlacedGraph } from "./templates";
 
@@ -6,7 +6,14 @@ export function listWorkflows(userId: string) {
   return prisma.workflow.findMany({
     where: { userId },
     orderBy: { updatedAt: "desc" },
-    select: { id: true, name: true, thumbnail: true, createdAt: true, updatedAt: true },
+    select: {
+      id: true,
+      name: true,
+      thumbnail: true,
+      createdAt: true,
+      updatedAt: true,
+      _count: { select: { runs: { where: { status: RunStatus.RUNNING } } } },
+    },
   });
 }
 

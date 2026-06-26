@@ -10,6 +10,7 @@ export type WorkflowListItem = {
   name: string;
   thumbnail?: string | null;
   updatedAt: string;
+  running?: boolean;
 };
 
 export function DashboardView({ workflows }: { workflows: WorkflowListItem[] }) {

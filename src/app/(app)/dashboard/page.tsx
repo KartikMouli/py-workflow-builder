@@ -10,6 +10,7 @@ export default async function DashboardPage() {
     name: w.name,
     thumbnail: w.thumbnail,
     updatedAt: w.updatedAt.toISOString(),
+    running: w._count.runs > 0,
   }));
   return <DashboardView workflows={workflows} />;
 }

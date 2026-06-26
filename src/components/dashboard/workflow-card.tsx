@@ -116,6 +116,12 @@ export function WorkflowCard({
             </span>
           )}
         </button>
+        {workflow.running && (
+          <span className="pointer-events-none absolute bottom-2 left-2 flex items-center gap-1.5 rounded-full bg-white/90 px-2 py-1 text-[11px] font-medium text-blue-600 shadow-sm backdrop-blur">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-blue-500" />
+            Running
+          </span>
+        )}
       </div>
 
       <button
