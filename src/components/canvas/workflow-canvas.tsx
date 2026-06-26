@@ -51,12 +51,21 @@ export function WorkflowCanvas({
   const undo = useCanvasStore((s) => s.undo);
   const redo = useCanvasStore((s) => s.redo);
   const liveRun = useCanvasStore((s) => s.liveRun);
+  const runStarting = useCanvasStore((s) => s.runStarting);
   const runWorkflow = useCanvasStore((s) => s.runWorkflow);
   const setWorkflowId = useCanvasStore((s) => s.setWorkflowId);
   const clearLiveRun = useCanvasStore((s) => s.clearLiveRun);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [historyOpen, setHistoryOpen] = useState(false);
   const pendingBody = useRef<string | null>(null);
+  const wasLive = useRef(false);
+
+  // Auto-open the execution history when a run begins (matches the product's run UX).
+  useEffect(() => {
+    const isLive = !!liveRun;
+    if (isLive && !wasLive.current) setHistoryOpen(true);
+    wasLive.current = isLive;
+  }, [liveRun]);
 
   const startRun = useCallback(() => runWorkflow("FULL"), [runWorkflow]);
 
@@ -176,6 +185,14 @@ export function WorkflowCanvas({
                   <span className="font-medium text-red-600">Save failed</span>
                 </>
               )}
+            </div>
+          )}
+          {runStarting && (
+            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-white/60 backdrop-blur-[2px]">
+              <Loader2 className="h-7 w-7 animate-spin text-brand" />
+              <p className="text-sm font-medium text-gray-600">
+                Setting things up, your workflow will start shortly
+              </p>
             </div>
           )}
           <CanvasTopBar

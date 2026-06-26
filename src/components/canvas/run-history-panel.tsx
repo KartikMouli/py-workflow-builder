@@ -27,10 +27,12 @@ type NodeRunItem = {
   durationMs: number | null;
 };
 
-const SCOPE_LABEL: Record<RunListItem["scope"], string> = {
-  FULL: "Full run",
-  PARTIAL: "Partial run",
-  SINGLE: "Single node",
+const STATUS_META: Record<string, { label: string; dot: string }> = {
+  RUNNING: { label: "Running", dot: "bg-blue-500" },
+  SUCCESS: { label: "Completed", dot: "bg-green-500" },
+  FAILED: { label: "Failed", dot: "bg-red-500" },
+  PARTIAL: { label: "Partial", dot: "bg-amber-500" },
+  CANCELED: { label: "Canceled", dot: "bg-gray-400" },
 };
 
 const NODE_LABEL: Record<string, string> = {
@@ -68,20 +70,17 @@ function fmtDuration(ms: number | null): string {
   return `${(ms / 1000).toFixed(1)}s`;
 }
 
-function runDuration(r: RunListItem): number | null {
-  if (r.durationMs != null) return r.durationMs;
-  if (r.finishedAt) return new Date(r.finishedAt).getTime() - new Date(r.startedAt).getTime();
-  return null;
+function formatDateTime(iso: string): string {
+  const d = new Date(iso);
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()}, ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
 }
 
-function timeAgo(iso: string): string {
-  const s = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 1000));
-  if (s < 60) return `${s}s ago`;
-  const m = Math.floor(s / 60);
-  if (m < 60) return `${m}m ago`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
-  return `${Math.floor(h / 24)}d ago`;
+// Mock credit metric (Magica's "M" unit), consistent with the top-bar Est pill.
+function creditsLabel(run: RunListItem): string {
+  if (run.status === "RUNNING") return "0M";
+  const c = (run._count?.nodeRuns ?? 0) * 0.0025;
+  return c === 0 ? "0M" : `${c.toFixed(2)}M`;
 }
 
 export function RunHistoryPanel({
@@ -303,31 +302,28 @@ function RunRow({
   nodeRuns?: NodeRunItem[];
   loading: boolean;
 }) {
+  const meta = STATUS_META[run.status] ?? { label: run.status, dot: "bg-gray-400" };
+  const active = run.status === "RUNNING";
+
   return (
-    <li className="overflow-hidden rounded-xl border border-gray-200">
-      <button
-        type="button"
-        onClick={onToggle}
-        className="flex w-full items-center gap-2.5 px-3.5 py-3 text-left hover:bg-gray-50"
-      >
-        <StatusIcon status={run.status} />
-        <div className="min-w-0 flex-1">
+    <li
+      className={`overflow-hidden rounded-xl border ${
+        active ? "border-brand bg-brand/5" : "border-gray-200 bg-white"
+      }`}
+    >
+      <button type="button" onClick={onToggle} className="w-full px-4 py-3 text-left">
+        <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-800">{SCOPE_LABEL[run.scope]}</span>
-            <span className="text-xs text-gray-400">{timeAgo(run.startedAt)}</span>
+            <span className={`h-2.5 w-2.5 rounded-full ${meta.dot}`} />
+            <span className="text-[15px] font-medium text-gray-900">{meta.label}</span>
           </div>
-          <div className="text-xs text-gray-400">
-            {fmtDuration(runDuration(run))}
-            {run._count ? ` · ${run._count.nodeRuns} node${run._count.nodeRuns === 1 ? "" : "s"}` : ""}
-          </div>
+          <span className="pt-0.5 text-xs text-gray-400">{formatDateTime(run.startedAt)}</span>
         </div>
-        <ChevronDown
-          className={`h-4 w-4 shrink-0 text-gray-300 transition-transform ${open ? "rotate-180" : ""}`}
-        />
+        <p className="mt-1 pl-4.5 text-xs text-gray-400">Credits: {creditsLabel(run)}</p>
       </button>
 
       {open && (
-        <div className="space-y-1.5 border-t border-gray-100 bg-gray-50/60 px-3.5 py-3">
+        <div className="space-y-1.5 border-t border-gray-100 bg-gray-50/60 px-4 py-3">
           {loading ? (
             <div className="flex items-center gap-2 py-1 text-xs text-gray-400">
               <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading…

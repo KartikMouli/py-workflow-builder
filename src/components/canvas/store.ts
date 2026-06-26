@@ -32,6 +32,7 @@ type CanvasState = {
   workflowId: string;
   toast: string | null;
   liveRun: LiveRun;
+  runStarting: boolean;
   runStates: Record<string, NodeRunState>;
   outputs: Record<string, Record<string, unknown>>;
   onNodesChange: (changes: NodeChange<AppNode>[]) => void;
@@ -71,6 +72,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => {
     workflowId: "",
     toast: null,
     liveRun: null,
+    runStarting: false,
     runStates: {},
     outputs: {},
 
@@ -204,6 +206,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => {
         set({ toast: error });
         return;
       }
+      set({ runStarting: true });
       try {
         const res = await fetch(`/api/workflows/${workflowId}/runs`, {
           method: "POST",
@@ -211,7 +214,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => {
           body: JSON.stringify({ scope, targets, graph: serializeGraph(nodes, edges) }),
         });
         if (!res.ok) {
-          set({ toast: "Couldn't start the run." });
+          set({ toast: "Couldn't start the run.", runStarting: false });
           return;
         }
         const { dbRunId, triggerRunId, publicAccessToken } = await res.json();
@@ -221,14 +224,15 @@ export const useCanvasStore = create<CanvasState>((set, get) => {
           outputs: {},
         });
       } catch {
-        set({ toast: "Couldn't start the run." });
+        set({ toast: "Couldn't start the run.", runStarting: false });
       }
     },
 
     startLiveRun: (run) => set({ liveRun: run, runStates: {}, outputs: {} }),
-    setRunStates: (states) => set({ runStates: states }),
+    setRunStates: (states) =>
+      set(Object.keys(states).length ? { runStates: states, runStarting: false } : { runStates: states }),
     setOutputs: (outputs) => set({ outputs }),
-    clearLiveRun: () => set({ liveRun: null }),
+    clearLiveRun: () => set({ liveRun: null, runStarting: false }),
   };
 });
 
