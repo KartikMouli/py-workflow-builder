@@ -13,6 +13,9 @@
   --color-brand-foreground: #ffffff;
   --color-sidebar: #f0f0f0;
   --color-canvas: #fafafa;
+  --color-accent: #f3f4f6;
+  --color-accent-foreground: #111827;
+  --color-ring: #9ca3af;
   --font-sans: var(--font-inter);
 }
 

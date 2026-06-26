@@ -166,7 +166,7 @@ export function RunHistoryPanel({
         <button
           type="button"
           onClick={onClose}
-          className="text-sm font-medium text-gray-600 hover:text-gray-900"
+          className="inline-flex h-8 items-center justify-center gap-2 whitespace-nowrap rounded-[18px] px-3 text-xs font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 dark:hover:bg-neutral-700 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0"
         >
           Close
         </button>
@@ -186,7 +186,7 @@ export function RunHistoryPanel({
       <div className="border-t border-gray-200" />
 
       <div className="flex items-center justify-between px-5 pb-3 pt-4">
-        <span className="text-sm font-medium text-gray-700">Run history</span>
+        <span className="text-xs font-medium text-gray-600 dark:text-zinc-400">Run history</span>
         <FilterDropdown value={filter} onChange={setFilter} />
       </div>
 
@@ -238,8 +238,10 @@ function TabButton({
     <button
       type="button"
       onClick={onClick}
-      className={`flex-1 rounded-lg py-2 text-sm font-medium transition-colors ${
-        active ? "bg-white text-gray-900 shadow-sm" : "text-gray-400 hover:text-gray-600"
+      className={`flex-1 rounded-md px-3 py-1.5 text-[11px] font-medium transition-colors ${
+        active
+          ? "bg-white text-gray-900 shadow-sm dark:bg-zinc-700 dark:text-white"
+          : "text-gray-400 hover:text-gray-600"
       }`}
     >
       {children}
