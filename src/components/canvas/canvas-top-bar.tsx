@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Calculator, Clock, Play, Square, Wallet } from "lucide-react";
+import { ArrowLeft, Calculator, Clock, Loader2, Play, Wallet, X } from "lucide-react";
 import Link from "next/link";
 import { useMemo } from "react";
 import { useCanvasStore } from "./store";
@@ -22,6 +22,7 @@ export function CanvasTopBar({
   onHistory: () => void;
 }) {
   const nodes = useCanvasStore((s) => s.nodes);
+  const liveRun = useCanvasStore((s) => s.liveRun);
   const estimate = useMemo(
     () => nodes.reduce((sum, n) => sum + (NODE_COST_M[n.type ?? ""] ?? 0), 0),
     [nodes],
@@ -39,44 +40,50 @@ export function CanvasTopBar({
         <span className="text-sm font-medium text-gray-800">{name}</span>
       </div>
       <div className="absolute right-4 top-4 z-10 flex items-center gap-2">
+        {isRunning && (
+          <span className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs shadow-sm">
+            <span className="font-medium text-gray-700">Viewing live run</span>
+            {liveRun && <span className="text-gray-400">{liveRun.dbRunId.slice(0, 8)}…</span>}
+          </span>
+        )}
+        <span className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs shadow-sm">
+          <Calculator className="h-3.5 w-3.5 text-gray-400" />
+          <span className="text-gray-500">Est</span>
+          <span className="font-semibold text-gray-900">{estimate.toFixed(2)}</span>
+          <span className="text-gray-400">M</span>
+        </span>
+        <span className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs shadow-sm">
+          <Wallet className="h-3.5 w-3.5 text-gray-400" />
+          <span className="text-gray-500">Bal</span>
+          <span className="font-semibold text-gray-900">0.00</span>
+          <span className="text-gray-400">M</span>
+        </span>
         {isRunning ? (
           <>
-            <span className="flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm">
-              <span className="h-2 w-2 animate-pulse rounded-full bg-brand" />
-              Viewing live run
-            </span>
+            <div
+              aria-label="Run in progress"
+              className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand text-white shadow-sm"
+            >
+              <Loader2 className="h-4 w-4 animate-spin" />
+            </div>
             <button
               type="button"
               onClick={onStop}
-              className="flex items-center gap-1.5 rounded-lg bg-[#e42125] px-3 py-2 text-xs font-medium text-white shadow-sm hover:brightness-95"
+              aria-label="Stop run"
+              className="flex h-9 w-9 items-center justify-center rounded-lg border border-red-100 bg-red-50 text-red-500 shadow-sm hover:bg-red-100"
             >
-              <Square className="h-3.5 w-3.5" />
-              Stop run
+              <X className="h-4 w-4" />
             </button>
           </>
         ) : (
-          <>
-            <span className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs shadow-sm">
-              <Calculator className="h-3.5 w-3.5 text-gray-400" />
-              <span className="text-gray-500">Est</span>
-              <span className="font-semibold text-gray-900">{estimate.toFixed(2)}</span>
-              <span className="text-gray-400">M</span>
-            </span>
-            <span className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs shadow-sm">
-              <Wallet className="h-3.5 w-3.5 text-gray-400" />
-              <span className="text-gray-500">Bal</span>
-              <span className="font-semibold text-gray-900">0.00</span>
-              <span className="text-gray-400">M</span>
-            </span>
-            <button
-              type="button"
-              onClick={onRun}
-              aria-label="Run workflow"
-              className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand text-white shadow-sm hover:bg-brand-hover"
-            >
-              <Play className="h-4 w-4 fill-current" />
-            </button>
-          </>
+          <button
+            type="button"
+            onClick={onRun}
+            aria-label="Run workflow"
+            className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand text-white shadow-sm hover:bg-brand-hover"
+          >
+            <Play className="h-4 w-4 fill-current" />
+          </button>
         )}
         <button
           type="button"
