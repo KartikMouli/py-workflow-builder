@@ -69,11 +69,11 @@ export function AppSidebar() {
               <RailTip key={label} label={label}>
                 {href ? (
                   <Link href={href} className={cls}>
-                    <Icon className="h-4 w-4" />
+                    <Icon className="h-5 w-5" />
                   </Link>
                 ) : (
                   <button type="button" className={`${cls} cursor-default`}>
-                    <Icon className="h-4 w-4" />
+                    <Icon className="h-5 w-5" />
                   </button>
                 )}
               </RailTip>
@@ -86,7 +86,7 @@ export function AppSidebar() {
               type="button"
               className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-600 hover:bg-[#e6e6e6]"
             >
-              <Settings className="h-4 w-4" />
+              <Settings className="h-5 w-5" />
             </button>
           </RailTip>
           <RailTip label="Claim Offer">
@@ -94,7 +94,7 @@ export function AppSidebar() {
               type="button"
               className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand text-white hover:bg-brand-hover"
             >
-              <Gift className="h-4 w-4" />
+              <Gift className="h-5 w-5" />
             </button>
           </RailTip>
           <UserButton />
@@ -133,7 +133,7 @@ export function AppSidebar() {
 
           return href ? (
             <Link key={label} href={href} className={`${base} ${tone}`}>
-              <Icon className="h-4 w-4" />
+              <Icon className="h-5 w-5" />
               {label}
             </Link>
           ) : (
@@ -142,7 +142,7 @@ export function AppSidebar() {
               type="button"
               className={`${base} ${tone} w-full cursor-default text-left`}
             >
-              <Icon className="h-4 w-4" />
+              <Icon className="h-5 w-5" />
               {label}
             </button>
           );
@@ -168,14 +168,14 @@ export function AppSidebar() {
               type="button"
               className="flex w-full items-center justify-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
             >
-              <Settings className="h-4 w-4" />
+              <Settings className="h-5 w-5" />
               Settings
             </button>
             <button
               type="button"
               className="flex w-full items-center justify-center gap-2 rounded-full bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-hover"
             >
-              <Gift className="h-4 w-4" />
+              <Gift className="h-5 w-5" />
               Claim Offer
             </button>
           </div>
