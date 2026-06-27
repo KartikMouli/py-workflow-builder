@@ -1,6 +1,7 @@
 # Py — Galaxy.ai Workflow Builder Clone
 
 **Live demo:** <https://py-workflow-builder-gamma.vercel.app/>
+**Demo video:** <https://drive.google.com/drive/folders/1qPNfQ6TIeJqXHyPkmGpAa83xwMdun1mu?usp=sharing>
 
 A pixel-faithful clone of the Galaxy.ai (Magica) LLM workflow builder. Build node-based
 workflows on a React Flow canvas, execute every node on Trigger.dev, and watch live progress
