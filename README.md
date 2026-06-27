@@ -1,5 +1,7 @@
 # Py — Galaxy.ai Workflow Builder Clone
 
+**Live demo:** <https://py-workflow-builder-gamma.vercel.app/>
+
 A pixel-faithful clone of the Galaxy.ai (Magica) LLM workflow builder. Build node-based
 workflows on a React Flow canvas, execute every node on Trigger.dev, and watch live progress
 with a pulsating glow driven by Trigger.dev Realtime.
@@ -72,6 +74,8 @@ Gemini receiving both crops on its Image (Vision) handle.
 
 ## Deploy
 
-Deployed on Vercel. Set every environment variable above in the Vercel project, run
-`pnpm prisma migrate deploy` against the production database, and `npx trigger.dev@latest deploy`
-to ship the task to the Trigger.dev production environment.
+Live at <https://py-workflow-builder-gamma.vercel.app/>, deployed on Vercel. Set every
+environment variable above in the Vercel project, run `pnpm prisma migrate deploy` against the
+production database, and `npx trigger.dev@latest deploy` to ship the task to the Trigger.dev
+production environment. Note that the task's own env vars (`DATABASE_URL`,
+`GOOGLE_GENERATIVE_AI_API_KEY`) are set in the Trigger.dev dashboard, not Vercel.
