@@ -118,8 +118,15 @@ export function RunHistoryPanel({
   const [expanded, setExpanded] = useState<string | null>(null);
   const [details, setDetails] = useState<Record<string, NodeRunItem[]>>({});
   const [detailLoading, setDetailLoading] = useState<string | null>(null);
+  const [autoExpanded, setAutoExpanded] = useState<string | null>(null);
   const liveStates = useCanvasStore((s) => s.runStates);
   const storeNodes = useCanvasStore((s) => s.nodes);
+
+  // Auto-expand a run the moment it becomes active so its live steps show without a click.
+  if (activeRunId && activeRunId !== autoExpanded) {
+    setAutoExpanded(activeRunId);
+    setExpanded(activeRunId);
+  }
 
   // activeRunId flips on run start/finish. While a run is live we render its node steps
   // straight from the realtime channel; the epoch keys the finished-run detail cache below.
@@ -171,11 +178,6 @@ export function RunHistoryPanel({
       cancelled = true;
     };
   }, [detailKey, expanded, details]);
-
-  // Surface live node steps the moment a run starts by auto-expanding the active run.
-  useEffect(() => {
-    if (activeRunId) setExpanded(activeRunId);
-  }, [activeRunId]);
 
   if (!open) return null;
 
