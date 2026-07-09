@@ -28,8 +28,19 @@ type NodeState = { status: NodeStatus; error?: string; durationMs?: number; text
 
 const CROP_MIN_WAIT_MS = 30_000;
 
+// Gemini preview models return 503 ("high demand") and 429 under load — both transient.
+const GEMINI_MAX_ATTEMPTS = 5;
+const GEMINI_RETRYABLE_STATUS = new Set([429, 500, 502, 503, 504]);
+
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function geminiStatus(err: unknown): number | undefined {
+  const status = (err as { status?: number })?.status;
+  if (typeof status === "number") return status;
+  const match = err instanceof Error ? err.message.match(/\[(\d{3})\s/) : null;
+  return match ? Number(match[1]) : undefined;
 }
 
 async function loadImageBuffer(source: string): Promise<{ buffer: Buffer; mime: string }> {
@@ -99,8 +110,17 @@ async function runGemini(
     const { buffer, mime } = await loadImageBuffer(url);
     parts.push({ inlineData: { mimeType: mime, data: buffer.toString("base64") } });
   }
-  const result = await generative.generateContent(parts);
-  return result.response.text();
+  for (let attempt = 1; ; attempt++) {
+    try {
+      const result = await generative.generateContent(parts);
+      return result.response.text();
+    } catch (err) {
+      const status = geminiStatus(err);
+      const retryable = status === undefined || GEMINI_RETRYABLE_STATUS.has(status);
+      if (!retryable || attempt >= GEMINI_MAX_ATTEMPTS) throw err;
+      await delay(Math.min(1000 * 2 ** (attempt - 1), 8000) + Math.floor(Math.random() * 500));
+    }
+  }
 }
 
 export const runWorkflowTask = task({
@@ -191,7 +211,7 @@ export const runWorkflowTask = task({
             ...(images.length ? { image: images.map(summarize) } : {}),
           };
           const text = await runGemini(
-            (data.model as string) ?? "gemini-3-flash-preview",
+            (data.model as string) ?? "gemini-3.1-pro-preview",
             prompt,
             system,
             images,
