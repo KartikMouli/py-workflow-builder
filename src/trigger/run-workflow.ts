@@ -369,4 +369,17 @@ export const runWorkflowTask = task({
       throw err;
     }
   },
+  // Runs after execution has stopped, so it can't race the per-node writes: settle anything
+  // still non-terminal to SKIPPED and mark the run CANCELED — no node stays stuck at RUNNING.
+  onCancel: async ({ payload }: { payload: RunWorkflowPayload }) => {
+    const finishedAt = new Date();
+    await prisma.nodeRun.updateMany({
+      where: { runId: payload.dbRunId, status: { in: [NodeStatus.PENDING, NodeStatus.RUNNING] } },
+      data: { status: NodeStatus.SKIPPED, finishedAt },
+    });
+    await prisma.run.updateMany({
+      where: { id: payload.dbRunId, status: RunStatus.RUNNING },
+      data: { status: RunStatus.CANCELED, finishedAt },
+    });
+  },
 });

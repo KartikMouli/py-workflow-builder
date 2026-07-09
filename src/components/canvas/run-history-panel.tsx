@@ -5,7 +5,7 @@ import { type ReactNode, useEffect, useState } from "react";
 import { ImagePreview } from "./image-preview";
 import { useCanvasStore } from "./store";
 
-type RunStatus = "RUNNING" | "SUCCESS" | "FAILED" | "PARTIAL";
+type RunStatus = "RUNNING" | "SUCCESS" | "FAILED" | "PARTIAL" | "CANCELED";
 type NodeStatus = "PENDING" | "RUNNING" | "SUCCESS" | "FAILED" | "SKIPPED";
 type Filter = "ALL" | "RUNNING" | "SUCCESS" | "FAILED";
 
