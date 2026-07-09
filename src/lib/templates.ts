@@ -3,7 +3,7 @@ import type { Prisma } from "@/generated/prisma/client";
 const PRODUCT_BRIEF =
   "Product: Wireless Bluetooth Headphones. Features: Noise cancellation, 30-hour battery, foldable design.";
 
-const GEMINI_MODEL = "gemini-3-flash-preview";
+const GEMINI_MODEL = "gemini-3.1-pro-preview";
 const SETTINGS = { temperature: 1, maxOutputTokens: 2048 };
 
 // The "Trial Task Workflow" from the submission reference: a marketing-post pipeline.

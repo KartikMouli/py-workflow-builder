@@ -15,12 +15,11 @@ const UPLOAD_INPUTS: { id: string; label: string; type: DataType }[] = [
   { id: "file", label: "File", type: "file" },
 ];
 
-// The provided Google AI key only authorizes one Gemini model, so every label maps to that
-// model at execution — the selector mirrors the reference's model picker without breaking runs.
+// Gemini 2.5 Flash is GA (no high-demand 503s) and is the reliable fallback if a preview throttles.
 const MODELS: { label: string; api: string }[] = [
-  { label: "Gemini 3.1 Pro", api: "gemini-3-flash-preview" },
+  { label: "Gemini 3.1 Pro", api: "gemini-3.1-pro-preview" },
   { label: "Gemini 3 Flash", api: "gemini-3-flash-preview" },
-  { label: "Gemini 2.5 Flash", api: "gemini-3-flash-preview" },
+  { label: "Gemini 2.5 Flash", api: "gemini-2.5-flash" },
 ];
 
 function ModelDropdown({ id, current }: { id: string; current: string }) {
