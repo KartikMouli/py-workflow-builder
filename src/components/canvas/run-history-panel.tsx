@@ -384,22 +384,40 @@ function RunRow({
 }
 
 function NodeRunRow({ nodeRun }: { nodeRun: NodeRunItem }) {
+  const [open, setOpen] = useState(false);
+  const hasDetails =
+    (!!nodeRun.inputs && Object.keys(nodeRun.inputs).length > 0) ||
+    !!nodeRun.error ||
+    (!!nodeRun.output && Object.keys(nodeRun.output).length > 0);
   return (
     <div className="rounded-lg border border-gray-100 bg-white p-2.5">
-      <div className="flex items-center gap-2">
+      <button
+        type="button"
+        onClick={() => hasDetails && setOpen((v) => !v)}
+        className={`flex w-full items-center gap-2 text-left ${hasDetails ? "" : "cursor-default"}`}
+      >
         <StatusIcon status={nodeRun.status} />
         <span className="flex-1 truncate text-xs font-medium text-gray-700">
           {NODE_LABEL[nodeRun.nodeType] ?? nodeRun.nodeType}
         </span>
         <span className="text-[11px] text-gray-400">{fmtDuration(nodeRun.durationMs)}</span>
-      </div>
-      <NodeInputs inputs={nodeRun.inputs} />
+        {hasDetails && (
+          <ChevronDown
+            className={`h-3.5 w-3.5 shrink-0 text-gray-400 transition-transform ${open ? "rotate-180" : ""}`}
+          />
+        )}
+      </button>
+      <NodeInputs inputs={nodeRun.inputs} expanded={open} />
       {nodeRun.error && (
-        <p className="mt-1.5 rounded bg-red-50 px-2 py-1 text-[11px] leading-snug text-red-600">
+        <p
+          className={`mt-1.5 rounded bg-red-50 px-2 py-1 text-[11px] leading-snug text-red-600 ${
+            open ? "whitespace-pre-wrap wrap-break-word" : "line-clamp-2"
+          }`}
+        >
           {nodeRun.error}
         </p>
       )}
-      {!nodeRun.error && <NodeOutput nodeRun={nodeRun} />}
+      {!nodeRun.error && <NodeOutput nodeRun={nodeRun} expanded={open} />}
     </div>
   );
 }
@@ -410,7 +428,13 @@ function fmtInputValue(v: unknown): string {
   return String(v);
 }
 
-function NodeInputs({ inputs }: { inputs: Record<string, unknown> | null }) {
+function NodeInputs({
+  inputs,
+  expanded,
+}: {
+  inputs: Record<string, unknown> | null;
+  expanded: boolean;
+}) {
   if (!inputs || Object.keys(inputs).length === 0) return null;
   return (
     <div className="mt-1.5 rounded bg-gray-50 px-2 py-1.5">
@@ -419,7 +443,13 @@ function NodeInputs({ inputs }: { inputs: Record<string, unknown> | null }) {
         {Object.entries(inputs).map(([k, v]) => (
           <div key={k} className="flex gap-1.5 text-[11px] leading-snug">
             <span className="shrink-0 font-medium text-gray-500">{k}:</span>
-            <span className="min-w-0 flex-1 truncate text-gray-600">{fmtInputValue(v)}</span>
+            <span
+              className={`min-w-0 flex-1 text-gray-600 ${
+                expanded ? "whitespace-pre-wrap wrap-break-word" : "truncate"
+              }`}
+            >
+              {fmtInputValue(v)}
+            </span>
           </div>
         ))}
       </div>
@@ -427,11 +457,15 @@ function NodeInputs({ inputs }: { inputs: Record<string, unknown> | null }) {
   );
 }
 
-function NodeOutput({ nodeRun }: { nodeRun: NodeRunItem }): ReactNode {
+function NodeOutput({ nodeRun, expanded }: { nodeRun: NodeRunItem; expanded: boolean }): ReactNode {
   const out = nodeRun.output ?? {};
   if (nodeRun.nodeType === "gemini" && typeof out.response === "string") {
     return (
-      <p className="mt-1.5 line-clamp-3 whitespace-pre-wrap text-[11px] leading-snug text-gray-500">
+      <p
+        className={`mt-1.5 whitespace-pre-wrap text-[11px] leading-snug text-gray-500 ${
+          expanded ? "" : "line-clamp-3"
+        }`}
+      >
         {out.response}
       </p>
     );
@@ -441,7 +475,9 @@ function NodeOutput({ nodeRun }: { nodeRun: NodeRunItem }): ReactNode {
     return (
       <div className="mt-1.5 space-y-1.5">
         <div
-          className="h-20 w-full rounded bg-gray-50 bg-contain bg-center bg-no-repeat"
+          className={`w-full rounded bg-gray-50 bg-contain bg-center bg-no-repeat ${
+            expanded ? "h-40" : "h-20"
+          }`}
           style={{ backgroundImage: `url("${image}")` }}
         />
         <a
