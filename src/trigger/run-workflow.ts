@@ -247,32 +247,66 @@ export const runWorkflowTask = task({
       const all = [...new Set(edges.filter((e) => e.target === nodeId).map((e) => e.source))];
       return scope === "FULL" ? all : all.filter((p) => targetSet.has(p));
     }
+    const nrId = (nodeId: string) => `${dbRunId}__${nodeId}`;
+    // Best-effort per-node history write — a failed history update must never abort the run.
+    async function persistNode(nodeId: string, data: Prisma.NodeRunUpdateInput) {
+      try {
+        await prisma.nodeRun.update({ where: { id: nrId(nodeId) }, data });
+      } catch {}
+    }
+
     const memo = new Map<string, Promise<NodeOutput>>();
     function schedule(nodeId: string): Promise<NodeOutput> {
       const existing = memo.get(nodeId);
       if (existing) return existing;
-      const promise = (async () => {
+      const promise = (async (): Promise<NodeOutput> => {
         const node = nodeById.get(nodeId);
         if (!node) return {};
-        await Promise.all(directParents(nodeId).map(schedule));
+        const parents = directParents(nodeId);
+        // allSettled (not all): a sibling's failure must not short-circuit into an unhandled
+        // rejection that crashes the run before its history is written.
+        await Promise.allSettled(parents.map(schedule));
+        // A node whose parent failed or was skipped can't run — record it as SKIPPED, not stuck PENDING.
+        if (
+          parents.some(
+            (p) => state[p]?.status === NodeStatus.FAILED || state[p]?.status === NodeStatus.SKIPPED,
+          )
+        ) {
+          state[nodeId] = { ...state[nodeId], status: NodeStatus.SKIPPED };
+          await persistNode(nodeId, { status: NodeStatus.SKIPPED, finishedAt: new Date() });
+          await publish();
+          return {};
+        }
         const startedAt = Date.now();
         state[nodeId] = { ...state[nodeId], status: NodeStatus.RUNNING };
+        await persistNode(nodeId, { status: NodeStatus.RUNNING, startedAt: new Date() });
         await publish();
         try {
           const out = await execNode(node);
           outputs[nodeId] = out;
           state[nodeId] = { ...state[nodeId], status: NodeStatus.SUCCESS, durationMs: Date.now() - startedAt };
+          await persistNode(nodeId, {
+            status: NodeStatus.SUCCESS,
+            inputs: nodeInputs[nodeId] as Prisma.InputJsonValue,
+            output: out as Prisma.InputJsonValue,
+            durationMs: Date.now() - startedAt,
+            finishedAt: new Date(),
+          });
           await publish();
           return out;
         } catch (err) {
-          state[nodeId] = {
-            ...state[nodeId],
+          const message = err instanceof Error ? err.message : String(err);
+          state[nodeId] = { ...state[nodeId], status: NodeStatus.FAILED, error: message, durationMs: Date.now() - startedAt };
+          await persistNode(nodeId, {
             status: NodeStatus.FAILED,
-            error: err instanceof Error ? err.message : String(err),
+            inputs: nodeInputs[nodeId] as Prisma.InputJsonValue,
+            error: message,
             durationMs: Date.now() - startedAt,
-          };
+            finishedAt: new Date(),
+          });
           await publish();
-          throw err;
+          // Swallow: downstream nodes observe FAILED via state and skip; the run is finalized below.
+          return {};
         }
       })();
       memo.set(nodeId, promise);
@@ -281,7 +315,8 @@ export const runWorkflowTask = task({
 
     const rootIds = payload.targets?.length ? payload.targets : nodes.map((n) => n.id);
 
-    // Mark every node that will run as PENDING up front so the UI shows queued badges.
+    // Every node that will run is recorded up front as PENDING, so its history persists in real
+    // time (and survives even if the run later crashes) rather than in one write at the end.
     const scopeIds = new Set<string>();
     const collectScope = (nodeId: string) => {
       if (scopeIds.has(nodeId)) return;
@@ -289,42 +324,49 @@ export const runWorkflowTask = task({
       for (const p of directParents(nodeId)) collectScope(p);
     };
     rootIds.forEach(collectScope);
-    for (const id of scopeIds) state[id] = { status: NodeStatus.PENDING };
+    const scopeNodes = nodes.filter((n) => scopeIds.has(n.id));
+    for (const n of scopeNodes) state[n.id] = { status: NodeStatus.PENDING };
+    await prisma.nodeRun.createMany({
+      data: scopeNodes.map((n) => ({
+        id: nrId(n.id),
+        runId: dbRunId,
+        nodeId: n.id,
+        nodeType: n.type ?? "unknown",
+        status: NodeStatus.PENDING,
+      })),
+      skipDuplicates: true,
+    });
     await publish();
 
-    await Promise.allSettled(rootIds.map((id) => schedule(id)));
-    await publishChain;
-    const ranNodes = nodes.filter((n) => state[n.id]);
+    try {
+      await Promise.allSettled(rootIds.map((id) => schedule(id)));
+      await publishChain;
 
-    // Mixed outcomes → PARTIAL; all failed → FAILED; otherwise SUCCESS.
-    const statuses = ranNodes.map((n) => state[n.id]?.status);
-    const anyFailed = statuses.includes(NodeStatus.FAILED);
-    const anySucceeded = statuses.includes(NodeStatus.SUCCESS);
-    const runStatus = anyFailed
-      ? anySucceeded
-        ? RunStatus.PARTIAL
-        : RunStatus.FAILED
-      : RunStatus.SUCCESS;
+      // Mixed outcomes → PARTIAL; all failed → FAILED; otherwise SUCCESS.
+      const statuses = scopeNodes.map((n) => state[n.id]?.status);
+      const anyFailed = statuses.includes(NodeStatus.FAILED);
+      const anySucceeded = statuses.includes(NodeStatus.SUCCESS);
+      const runStatus = anyFailed
+        ? anySucceeded
+          ? RunStatus.PARTIAL
+          : RunStatus.FAILED
+        : RunStatus.SUCCESS;
 
-    await prisma.$transaction([
-      prisma.run.update({
+      await prisma.run.update({
         where: { id: dbRunId },
         data: { status: runStatus, finishedAt: new Date(), durationMs: Date.now() - runStart },
-      }),
-      prisma.nodeRun.createMany({
-        data: ranNodes.map((n) => ({
-          runId: dbRunId,
-          nodeId: n.id,
-          nodeType: n.type ?? "unknown",
-          status: state[n.id]?.status ?? NodeStatus.PENDING,
-          inputs: nodeInputs[n.id] as Prisma.InputJsonValue | undefined,
-          output: outputs[n.id] as Prisma.InputJsonValue | undefined,
-          error: state[n.id]?.error,
-          durationMs: state[n.id]?.durationMs,
-        })),
-      }),
-    ]);
+      });
 
-    return { ok: !anyFailed, dbRunId };
+      return { ok: !anyFailed, dbRunId };
+    } catch (err) {
+      // Unexpected failure — finalize the run so it never stays stuck at RUNNING and history is kept.
+      await prisma.run
+        .update({
+          where: { id: dbRunId },
+          data: { status: RunStatus.FAILED, finishedAt: new Date(), durationMs: Date.now() - runStart },
+        })
+        .catch(() => {});
+      throw err;
+    }
   },
 });

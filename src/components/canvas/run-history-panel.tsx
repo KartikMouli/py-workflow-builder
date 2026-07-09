@@ -2,6 +2,7 @@
 
 import { AlertCircle, CheckCircle2, ChevronDown, Loader2, Minus, XCircle } from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
+import { useCanvasStore } from "./store";
 
 type RunStatus = "RUNNING" | "SUCCESS" | "FAILED" | "PARTIAL";
 type NodeStatus = "PENDING" | "RUNNING" | "SUCCESS" | "FAILED" | "SKIPPED";
@@ -109,9 +110,11 @@ export function RunHistoryPanel({
   const [expanded, setExpanded] = useState<string | null>(null);
   const [details, setDetails] = useState<Record<string, NodeRunItem[]>>({});
   const [detailLoading, setDetailLoading] = useState<string | null>(null);
+  const liveStates = useCanvasStore((s) => s.runStates);
+  const storeNodes = useCanvasStore((s) => s.nodes);
 
-  // activeRunId flips on run start/finish. Node-run rows are written only when a run
-  // finishes, so the epoch keys the detail cache below — stale detail is bypassed.
+  // activeRunId flips on run start/finish. While a run is live we render its node steps
+  // straight from the realtime channel; the epoch keys the finished-run detail cache below.
   const epoch = activeRunId ?? "idle";
 
   useEffect(() => {
@@ -161,9 +164,31 @@ export function RunHistoryPanel({
     };
   }, [detailKey, expanded, details]);
 
+  // Surface live node steps the moment a run starts by auto-expanding the active run.
+  useEffect(() => {
+    if (activeRunId) setExpanded(activeRunId);
+  }, [activeRunId]);
+
   if (!open) return null;
 
   const visible = tab === "ui" ? runs.filter((r) => filter === "ALL" || r.status === filter) : [];
+
+  // Live per-node steps for the in-progress run, derived from the realtime run metadata.
+  const liveNodeRuns: NodeRunItem[] = storeNodes
+    .filter((n) => liveStates[n.id])
+    .map((n) => {
+      const st = liveStates[n.id];
+      return {
+        id: n.id,
+        nodeId: n.id,
+        nodeType: n.type ?? "unknown",
+        status: (st.status ?? "PENDING") as NodeStatus,
+        error: st.error ?? null,
+        inputs: null,
+        output: st.text ? { response: st.text } : null,
+        durationMs: st.durationMs ?? null,
+      };
+    });
 
   return (
     <aside className="flex h-full w-105 shrink-0 flex-col border-l border-gray-200 bg-white">
@@ -213,14 +238,15 @@ export function RunHistoryPanel({
           <ul className="space-y-2">
             {visible.map((run) => {
               const key = `${run.id}:${epoch}`;
+              const isActive = run.id === activeRunId;
               return (
                 <RunRow
                   key={run.id}
                   run={run}
                   open={expanded === run.id}
                   onToggle={() => setExpanded((cur) => (cur === run.id ? null : run.id))}
-                  nodeRuns={details[key]}
-                  loading={detailLoading === key}
+                  nodeRuns={isActive && liveNodeRuns.length ? liveNodeRuns : details[key]}
+                  loading={isActive ? false : detailLoading === key}
                 />
               );
             })}
