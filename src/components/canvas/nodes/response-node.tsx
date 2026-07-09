@@ -1,6 +1,7 @@
 "use client";
 
 import type { NodeProps } from "@xyflow/react";
+import { Download } from "lucide-react";
 import { useMemo } from "react";
 import { useCanvasStore } from "../store";
 import type { ResponseNode } from "../types";
@@ -63,10 +64,19 @@ function Collector({ name, value }: { name: string; value: unknown }) {
     <div className="rounded-lg border border-gray-100 p-2">
       <div className="mb-1 text-xs font-medium text-gray-700">{name}</div>
       {isImage ? (
-        <div
-          className="h-20 w-full rounded bg-gray-50 bg-contain bg-center bg-no-repeat"
-          style={{ backgroundImage: `url("${value}")` }}
-        />
+        <div className="space-y-1">
+          <div
+            className="h-20 w-full rounded bg-gray-50 bg-contain bg-center bg-no-repeat"
+            style={{ backgroundImage: `url("${value}")` }}
+          />
+          <a
+            href={value as string}
+            download="cropped-image.png"
+            className="nodrag inline-flex items-center gap-1 text-[11px] font-medium text-brand hover:underline"
+          >
+            <Download className="h-3 w-3" /> Open image
+          </a>
+        </div>
       ) : text ? (
         <div className="nodrag max-h-28 overflow-auto whitespace-pre-wrap text-xs text-gray-700">
           {text}

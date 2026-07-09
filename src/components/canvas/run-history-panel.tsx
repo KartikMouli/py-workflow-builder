@@ -1,6 +1,14 @@
 "use client";
 
-import { AlertCircle, CheckCircle2, ChevronDown, Loader2, Minus, XCircle } from "lucide-react";
+import {
+  AlertCircle,
+  CheckCircle2,
+  ChevronDown,
+  Download,
+  Loader2,
+  Minus,
+  XCircle,
+} from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
 import { useCanvasStore } from "./store";
 
@@ -431,10 +439,19 @@ function NodeOutput({ nodeRun }: { nodeRun: NodeRunItem }): ReactNode {
   const image = out["output-image"];
   if (nodeRun.nodeType === "crop-image" && typeof image === "string") {
     return (
-      <div
-        className="mt-1.5 h-16 w-full rounded bg-gray-50 bg-contain bg-center bg-no-repeat"
-        style={{ backgroundImage: `url("${image}")` }}
-      />
+      <div className="mt-1.5 space-y-1.5">
+        <div
+          className="h-20 w-full rounded bg-gray-50 bg-contain bg-center bg-no-repeat"
+          style={{ backgroundImage: `url("${image}")` }}
+        />
+        <a
+          href={image}
+          download="cropped-image.png"
+          className="inline-flex items-center gap-1 text-[11px] font-medium text-brand hover:underline"
+        >
+          <Download className="h-3 w-3" /> Cropped image
+        </a>
+      </div>
     );
   }
   return null;
