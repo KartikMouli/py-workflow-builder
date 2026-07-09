@@ -1,6 +1,7 @@
 "use client";
 
 import type { NodeProps } from "@xyflow/react";
+import { ImagePreview } from "../image-preview";
 import { useCanvasStore, useConnectedTargets } from "../store";
 import type { CropImageNode } from "../types";
 import { ImageUploadButton } from "./image-upload-button";
@@ -77,10 +78,7 @@ export function CropImageNodeView({ id, data, selected }: NodeProps<CropImageNod
           <label className="mb-1 block text-xs font-medium text-gray-600">Output Image</label>
           {outputImage ? (
             <div className="overflow-hidden rounded-md border border-gray-200">
-              <div
-                className="h-24 w-full bg-gray-50 bg-contain bg-center bg-no-repeat"
-                style={{ backgroundImage: `url("${outputImage}")` }}
-              />
+              <ImagePreview src={outputImage} thumbClassName="h-24 w-full" downloadName="cropped-image.png" />
             </div>
           ) : (
             <div className="rounded-md bg-gray-50 py-3 text-center text-xs text-gray-400">

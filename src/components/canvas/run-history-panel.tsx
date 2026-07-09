@@ -1,15 +1,8 @@
 "use client";
 
-import {
-  AlertCircle,
-  CheckCircle2,
-  ChevronDown,
-  Download,
-  Loader2,
-  Minus,
-  XCircle,
-} from "lucide-react";
+import { AlertCircle, CheckCircle2, ChevronDown, Loader2, Minus, XCircle } from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
+import { ImagePreview } from "./image-preview";
 import { useCanvasStore } from "./store";
 
 type RunStatus = "RUNNING" | "SUCCESS" | "FAILED" | "PARTIAL";
@@ -475,20 +468,12 @@ function NodeOutput({ nodeRun, expanded }: { nodeRun: NodeRunItem; expanded: boo
   const image = out["output-image"];
   if (nodeRun.nodeType === "crop-image" && typeof image === "string") {
     return (
-      <div className="mt-1.5 space-y-1.5">
-        <div
-          className={`w-full rounded bg-gray-50 bg-contain bg-center bg-no-repeat ${
-            expanded ? "h-40" : "h-20"
-          }`}
-          style={{ backgroundImage: `url("${image}")` }}
+      <div className="mt-1.5">
+        <ImagePreview
+          src={image}
+          thumbClassName={expanded ? "h-40 w-full" : "h-20 w-full"}
+          downloadName="cropped-image.png"
         />
-        <a
-          href={image}
-          download="cropped-image.png"
-          className="inline-flex items-center gap-1 text-[11px] font-medium text-brand hover:underline"
-        >
-          <Download className="h-3 w-3" /> Cropped image
-        </a>
       </div>
     );
   }
