@@ -28,8 +28,19 @@ type NodeState = { status: NodeStatus; error?: string; durationMs?: number; text
 
 const CROP_MIN_WAIT_MS = 30_000;
 
+// Gemini preview models return 503 ("high demand") and 429 under load — both transient.
+const GEMINI_MAX_ATTEMPTS = 5;
+const GEMINI_RETRYABLE_STATUS = new Set([429, 500, 502, 503, 504]);
+
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function geminiStatus(err: unknown): number | undefined {
+  const status = (err as { status?: number })?.status;
+  if (typeof status === "number") return status;
+  const match = err instanceof Error ? err.message.match(/\[(\d{3})\s/) : null;
+  return match ? Number(match[1]) : undefined;
 }
 
 async function loadImageBuffer(source: string): Promise<{ buffer: Buffer; mime: string }> {
@@ -99,8 +110,17 @@ async function runGemini(
     const { buffer, mime } = await loadImageBuffer(url);
     parts.push({ inlineData: { mimeType: mime, data: buffer.toString("base64") } });
   }
-  const result = await generative.generateContent(parts);
-  return result.response.text();
+  for (let attempt = 1; ; attempt++) {
+    try {
+      const result = await generative.generateContent(parts);
+      return result.response.text();
+    } catch (err) {
+      const status = geminiStatus(err);
+      const retryable = status === undefined || GEMINI_RETRYABLE_STATUS.has(status);
+      if (!retryable || attempt >= GEMINI_MAX_ATTEMPTS) throw err;
+      await delay(Math.min(1000 * 2 ** (attempt - 1), 8000) + Math.floor(Math.random() * 500));
+    }
+  }
 }
 
 export const runWorkflowTask = task({
@@ -191,7 +211,7 @@ export const runWorkflowTask = task({
             ...(images.length ? { image: images.map(summarize) } : {}),
           };
           const text = await runGemini(
-            (data.model as string) ?? "gemini-3-flash-preview",
+            (data.model as string) ?? "gemini-3.1-pro-preview",
             prompt,
             system,
             images,
@@ -227,32 +247,66 @@ export const runWorkflowTask = task({
       const all = [...new Set(edges.filter((e) => e.target === nodeId).map((e) => e.source))];
       return scope === "FULL" ? all : all.filter((p) => targetSet.has(p));
     }
+    const nrId = (nodeId: string) => `${dbRunId}__${nodeId}`;
+    // Best-effort per-node history write — a failed history update must never abort the run.
+    async function persistNode(nodeId: string, data: Prisma.NodeRunUpdateInput) {
+      try {
+        await prisma.nodeRun.update({ where: { id: nrId(nodeId) }, data });
+      } catch {}
+    }
+
     const memo = new Map<string, Promise<NodeOutput>>();
     function schedule(nodeId: string): Promise<NodeOutput> {
       const existing = memo.get(nodeId);
       if (existing) return existing;
-      const promise = (async () => {
+      const promise = (async (): Promise<NodeOutput> => {
         const node = nodeById.get(nodeId);
         if (!node) return {};
-        await Promise.all(directParents(nodeId).map(schedule));
+        const parents = directParents(nodeId);
+        // allSettled (not all): a sibling's failure must not short-circuit into an unhandled
+        // rejection that crashes the run before its history is written.
+        await Promise.allSettled(parents.map(schedule));
+        // A node whose parent failed or was skipped can't run — record it as SKIPPED, not stuck PENDING.
+        if (
+          parents.some(
+            (p) => state[p]?.status === NodeStatus.FAILED || state[p]?.status === NodeStatus.SKIPPED,
+          )
+        ) {
+          state[nodeId] = { ...state[nodeId], status: NodeStatus.SKIPPED };
+          await persistNode(nodeId, { status: NodeStatus.SKIPPED, finishedAt: new Date() });
+          await publish();
+          return {};
+        }
         const startedAt = Date.now();
         state[nodeId] = { ...state[nodeId], status: NodeStatus.RUNNING };
+        await persistNode(nodeId, { status: NodeStatus.RUNNING, startedAt: new Date() });
         await publish();
         try {
           const out = await execNode(node);
           outputs[nodeId] = out;
           state[nodeId] = { ...state[nodeId], status: NodeStatus.SUCCESS, durationMs: Date.now() - startedAt };
+          await persistNode(nodeId, {
+            status: NodeStatus.SUCCESS,
+            inputs: nodeInputs[nodeId] as Prisma.InputJsonValue,
+            output: out as Prisma.InputJsonValue,
+            durationMs: Date.now() - startedAt,
+            finishedAt: new Date(),
+          });
           await publish();
           return out;
         } catch (err) {
-          state[nodeId] = {
-            ...state[nodeId],
+          const message = err instanceof Error ? err.message : String(err);
+          state[nodeId] = { ...state[nodeId], status: NodeStatus.FAILED, error: message, durationMs: Date.now() - startedAt };
+          await persistNode(nodeId, {
             status: NodeStatus.FAILED,
-            error: err instanceof Error ? err.message : String(err),
+            inputs: nodeInputs[nodeId] as Prisma.InputJsonValue,
+            error: message,
             durationMs: Date.now() - startedAt,
-          };
+            finishedAt: new Date(),
+          });
           await publish();
-          throw err;
+          // Swallow: downstream nodes observe FAILED via state and skip; the run is finalized below.
+          return {};
         }
       })();
       memo.set(nodeId, promise);
@@ -261,7 +315,8 @@ export const runWorkflowTask = task({
 
     const rootIds = payload.targets?.length ? payload.targets : nodes.map((n) => n.id);
 
-    // Mark every node that will run as PENDING up front so the UI shows queued badges.
+    // Every node that will run is recorded up front as PENDING, so its history persists in real
+    // time (and survives even if the run later crashes) rather than in one write at the end.
     const scopeIds = new Set<string>();
     const collectScope = (nodeId: string) => {
       if (scopeIds.has(nodeId)) return;
@@ -269,42 +324,62 @@ export const runWorkflowTask = task({
       for (const p of directParents(nodeId)) collectScope(p);
     };
     rootIds.forEach(collectScope);
-    for (const id of scopeIds) state[id] = { status: NodeStatus.PENDING };
+    const scopeNodes = nodes.filter((n) => scopeIds.has(n.id));
+    for (const n of scopeNodes) state[n.id] = { status: NodeStatus.PENDING };
+    await prisma.nodeRun.createMany({
+      data: scopeNodes.map((n) => ({
+        id: nrId(n.id),
+        runId: dbRunId,
+        nodeId: n.id,
+        nodeType: n.type ?? "unknown",
+        status: NodeStatus.PENDING,
+      })),
+      skipDuplicates: true,
+    });
     await publish();
 
-    await Promise.allSettled(rootIds.map((id) => schedule(id)));
-    await publishChain;
-    const ranNodes = nodes.filter((n) => state[n.id]);
+    try {
+      await Promise.allSettled(rootIds.map((id) => schedule(id)));
+      await publishChain;
 
-    // Mixed outcomes → PARTIAL; all failed → FAILED; otherwise SUCCESS.
-    const statuses = ranNodes.map((n) => state[n.id]?.status);
-    const anyFailed = statuses.includes(NodeStatus.FAILED);
-    const anySucceeded = statuses.includes(NodeStatus.SUCCESS);
-    const runStatus = anyFailed
-      ? anySucceeded
-        ? RunStatus.PARTIAL
-        : RunStatus.FAILED
-      : RunStatus.SUCCESS;
+      // Mixed outcomes → PARTIAL; all failed → FAILED; otherwise SUCCESS.
+      const statuses = scopeNodes.map((n) => state[n.id]?.status);
+      const anyFailed = statuses.includes(NodeStatus.FAILED);
+      const anySucceeded = statuses.includes(NodeStatus.SUCCESS);
+      const runStatus = anyFailed
+        ? anySucceeded
+          ? RunStatus.PARTIAL
+          : RunStatus.FAILED
+        : RunStatus.SUCCESS;
 
-    await prisma.$transaction([
-      prisma.run.update({
+      await prisma.run.update({
         where: { id: dbRunId },
         data: { status: runStatus, finishedAt: new Date(), durationMs: Date.now() - runStart },
-      }),
-      prisma.nodeRun.createMany({
-        data: ranNodes.map((n) => ({
-          runId: dbRunId,
-          nodeId: n.id,
-          nodeType: n.type ?? "unknown",
-          status: state[n.id]?.status ?? NodeStatus.PENDING,
-          inputs: nodeInputs[n.id] as Prisma.InputJsonValue | undefined,
-          output: outputs[n.id] as Prisma.InputJsonValue | undefined,
-          error: state[n.id]?.error,
-          durationMs: state[n.id]?.durationMs,
-        })),
-      }),
-    ]);
+      });
 
-    return { ok: !anyFailed, dbRunId };
+      return { ok: !anyFailed, dbRunId };
+    } catch (err) {
+      // Unexpected failure — finalize the run so it never stays stuck at RUNNING and history is kept.
+      await prisma.run
+        .update({
+          where: { id: dbRunId },
+          data: { status: RunStatus.FAILED, finishedAt: new Date(), durationMs: Date.now() - runStart },
+        })
+        .catch(() => {});
+      throw err;
+    }
+  },
+  // Runs after execution has stopped, so it can't race the per-node writes: settle anything
+  // still non-terminal to SKIPPED and mark the run CANCELED — no node stays stuck at RUNNING.
+  onCancel: async ({ payload }: { payload: RunWorkflowPayload }) => {
+    const finishedAt = new Date();
+    await prisma.nodeRun.updateMany({
+      where: { runId: payload.dbRunId, status: { in: [NodeStatus.PENDING, NodeStatus.RUNNING] } },
+      data: { status: NodeStatus.SKIPPED, finishedAt },
+    });
+    await prisma.run.updateMany({
+      where: { id: payload.dbRunId, status: RunStatus.RUNNING },
+      data: { status: RunStatus.CANCELED, finishedAt },
+    });
   },
 });

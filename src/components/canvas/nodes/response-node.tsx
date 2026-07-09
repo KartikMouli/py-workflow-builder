@@ -2,6 +2,7 @@
 
 import type { NodeProps } from "@xyflow/react";
 import { useMemo } from "react";
+import { ImagePreview } from "../image-preview";
 import { useCanvasStore } from "../store";
 import type { ResponseNode } from "../types";
 import { NodeFrame, type RunPhase, RowHandle } from "./node-frame";
@@ -63,10 +64,7 @@ function Collector({ name, value }: { name: string; value: unknown }) {
     <div className="rounded-lg border border-gray-100 p-2">
       <div className="mb-1 text-xs font-medium text-gray-700">{name}</div>
       {isImage ? (
-        <div
-          className="h-20 w-full rounded bg-gray-50 bg-contain bg-center bg-no-repeat"
-          style={{ backgroundImage: `url("${value}")` }}
-        />
+        <ImagePreview src={value as string} thumbClassName="h-20 w-full" downloadName="cropped-image.png" />
       ) : text ? (
         <div className="nodrag max-h-28 overflow-auto whitespace-pre-wrap text-xs text-gray-700">
           {text}
